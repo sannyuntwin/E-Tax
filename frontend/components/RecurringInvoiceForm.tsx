@@ -75,15 +75,14 @@ export default function RecurringInvoiceForm({
 
   const updateItem = (index: number, field: keyof InvoiceItem, value: string | number) => {
     const newItems = [...formData.items]
-    newItems[index] = { ...newItems, [field]: value }
-    
-    // Recalculate line total if quantity or unit_price changed
-    if (field === 'quantity' || field === 'unit_price') {
-      const quantity = Number(newItems[index].quantity) || 0
-      const unitPrice = Number(newItems[index].unit_price) || 0
-      newItems[index].line_total = quantity * unitPrice
+    newItems[index] = { 
+      ...newItems[index], 
+      [field]: value,
+      // Recalculate line total if quantity or unit_price changed
+      ...(field === 'quantity' || field === 'unit_price' ? {
+        line_total: Number(newItems[index].quantity) * Number(newItems[index].unit_price)
+      } : {})
     }
-    
     setFormData({ ...formData, items: newItems })
   }
 
