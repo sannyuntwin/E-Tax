@@ -26,11 +26,81 @@ body {
     rgb(var(--background-start-rgb));
 }
 
+/* Dark mode support */
+.dark body {
+  color: #ffffff;
+  background: #111827;
+}
+
 /* Fix input text colors */
 input, textarea, select {
   color: #000000 !important;
 }
 
+.dark input, .dark textarea, .dark select {
+  color: #ffffff !important;
+  background-color: #374151 !important;
+  border-color: #4b5563 !important;
+}
+
 input::placeholder, textarea::placeholder {
   color: #6b7280 !important;
+}
+
+.dark input::placeholder, .dark textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+/* Modal and overlay dark mode */
+.dark .fixed.inset-0 {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.dark .bg-white {
+  background-color: #1f2937 !important;
+  color: #ffffff !important;
+}
+
+.dark .text-gray-900 {
+  color: #ffffff !important;
+}
+
+.dark .text-gray-700 {
+  color: #d1d5db !important;
+}
+
+.dark .text-gray-600 {
+  color: #9ca3af !important;
+}
+
+.dark .border-gray-200 {
+  border-color: #374151 !important;
+}
+
+.dark .border-gray-300 {
+  border-color: #4b5563 !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: #374151 !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: #374151 !important;
+}
+
+.dark .hover\:bg-gray-200:hover {
+  background-color: #4b5563 !important;
+}
+
+.dark .hover\:bg-gray-300:hover {
+  background-color: #4b5563 !important;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  background-color: #374151 !important;
+}
+
+.dark .hover\:bg-gray-700:hover {
+  background-color: #374151 !important;
 }
