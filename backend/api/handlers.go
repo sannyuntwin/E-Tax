@@ -23,9 +23,22 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	r.PUT("/api/customers/:id", updateCustomer(db))
 	r.DELETE("/api/customers/:id", deleteCustomer(db))
 
+	// Products
+	r.GET("/api/products", getProducts(db))
+	r.POST("/api/products", createProduct(db))
+
+	// Dashboard
+	r.GET("/api/dashboard/stats", getDashboardStats(db))
+
+	// Invoice Templates
+	r.GET("/api/invoice-templates", getInvoiceTemplates(db))
+	r.POST("/api/invoice-templates/:templateId/create", createInvoiceFromTemplate(db))
+
 	// Invoices
 	r.GET("/api/invoices", getInvoices(db))
+	r.GET("/api/invoices/search", searchInvoices(db)) // Enhanced search
 	r.POST("/api/invoices", createInvoice(db))
+	r.POST("/api/invoices/draft", saveDraft(db)) // Auto-save drafts
 	r.GET("/api/invoices/:id", getInvoice(db))
 	r.PUT("/api/invoices/:id", updateInvoice(db))
 	r.DELETE("/api/invoices/:id", deleteInvoice(db))

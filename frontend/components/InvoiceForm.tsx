@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Plus, Trash2 } from 'lucide-react'
 import { Invoice, Company, Customer, InvoiceItem } from '@/types'
 
@@ -9,10 +9,11 @@ interface InvoiceFormProps {
   customers: Customer[]
   invoice?: Invoice
   onSubmit: (invoice: Partial<Invoice>) => void
+  onSaveDraft?: (invoice: Partial<Invoice>) => void
   onCancel: () => void
 }
 
-export default function InvoiceForm({ companies, customers, invoice, onSubmit, onCancel }: InvoiceFormProps) {
+export default function InvoiceForm({ companies, customers, invoice, onSubmit, onSaveDraft, onCancel }: InvoiceFormProps) {
   const [formData, setFormData] = useState({
     invoice_no: invoice?.invoice_no || '',
     issue_date: invoice?.issue_date || new Date().toISOString().split('T')[0],
@@ -22,6 +23,23 @@ export default function InvoiceForm({ companies, customers, invoice, onSubmit, o
     notes: invoice?.notes || '',
     items: invoice?.items || [createEmptyItem()]
   })
+
+  // Auto-save draft every 30 seconds
+  useEffect(() => {
+    if (!onSaveDraft) return
+
+    const interval = setInterval(() => {
+      const { subtotal, vatAmount, totalAmount } = calculateTotals()
+      onSaveDraft({
+        ...formData,
+        subtotal,
+        vat_amount: vatAmount,
+        total_amount: totalAmount
+      })
+    }, 30000) // 30 seconds
+
+    return () => clearInterval(interval)
+  }, [formData, onSaveDraft])
 
   function createEmptyItem(): InvoiceItem {
     return {

@@ -51,3 +51,6 @@ export interface Invoice {
   customer?: Customer
   items?: InvoiceItem[]
 }
+
+// Re-export enhanced types
+export * from './enhancements'
