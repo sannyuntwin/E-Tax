@@ -1,7 +1,8 @@
 package main
 
 import (
-	"log"
+	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -12,44 +13,57 @@ import (
 
 func main() {
 	// Load environment variables
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found")
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("No .env file found")
 	}
 
 	// Initialize database
 	db, err := database.InitDB()
 	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
+		fmt.Printf("Failed to initialize database: %v\n", err)
+		return
 	}
 
-	// Initialize Gin router
-	r := gin.Default()
-
-	// Enable CORS
-	r.Use(func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-
-		c.Next()
-	})
+	// Set up Gin router with performance optimizations
+	r := gin.New()
+	
+	// Add performance and security middleware
+	r.Use(gin.Logger())
+	r.Use(gin.Recovery())
+	r.Use(api.PerformanceMiddleware())
+	r.Use(api.CorsMiddleware())
+	r.Use(api.SecurityHeadersMiddleware())
+	r.Use(api.CompressionMiddleware())
+	
+	// Add rate limiting (100 requests per minute)
+	r.Use(api.RateLimiterMiddleware(100))
 
 	// Setup API routes
 	api.SetupRoutes(r, db)
 
-	// Get port from environment or use default
+	// Add health check endpoint
+	r.GET("/health", api.HealthCheck(db))
+	r.GET("/api/health", api.HealthCheck(db))
+
+	// Get port from environment
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	log.Printf("Server starting on port %s", port)
-	if err := r.Run(":" + port); err != nil {
-		log.Fatal("Failed to start server:", err)
+	fmt.Printf("E-Tax API Server starting on port %s\n", port)
+	fmt.Printf("Health check available at: http://localhost:%s/health\n", port)
+	fmt.Printf("Performance metrics at: http://localhost:%s/api/performance/metrics\n", port)
+	
+	// Start server with graceful shutdown
+	srv := &http.Server{
+		Addr:    ":" + port,
+		Handler: r,
+	}
+
+	// Run server
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		fmt.Printf("Failed to start server: %v\n", err)
 	}
 }

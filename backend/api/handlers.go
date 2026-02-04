@@ -9,6 +9,9 @@ import (
 )
 
 func SetupRoutes(r *gin.Engine, db *gorm.DB) {
+	// Add performance middleware
+	r.Use(performanceMiddleware())
+
 	// Companies
 	r.GET("/api/companies", getCompanies(db))
 	r.POST("/api/companies", createCompany(db))
@@ -57,10 +60,11 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	r.DELETE("/api/payments/:id", deletePayment(db))
 	r.GET("/api/payments/stats", getPaymentStats(db))
 
-	// Invoices
-	r.GET("/api/invoices", getInvoices(db))
-	r.GET("/api/invoices/search", searchInvoices(db)) // Enhanced search
+	// Invoices - Performance optimized versions
+	r.GET("/api/invoices", getInvoicesPaginated(db)) // New paginated version
+	r.GET("/api/invoices/search", searchInvoices(db)) // Original search
 	r.GET("/api/invoices/enhanced-search", enhancedSearch(db)) // New enhanced search
+	r.GET("/api/invoices/search-optimized", searchInvoicesOptimized(db)) // Optimized search
 	r.POST("/api/invoices", createInvoice(db))
 	r.POST("/api/invoices/draft", saveDraft(db)) // Auto-save drafts
 	r.POST("/api/invoices/:id/duplicate", duplicateInvoice(db)) // New duplicate feature
@@ -74,6 +78,9 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	r.POST("/api/invoices/:id/items", addInvoiceItem(db))
 	r.PUT("/api/invoice-items/:id", updateInvoiceItem(db))
 	r.DELETE("/api/invoice-items/:id", deleteInvoiceItem(db))
+
+	// Performance monitoring
+	r.GET("/api/performance/metrics", getPerformanceMetrics(db))
 }
 
 // Company handlers
