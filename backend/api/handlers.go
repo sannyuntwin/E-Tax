@@ -15,6 +15,10 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, securityService *security.SecurityS
 	r.POST("/api/auth/refresh", refresh(securityService, db))
 	r.POST("/api/auth/logout", logout(securityService, db))
 
+	// Public routes (no authentication required)
+	r.GET("/health", healthCheck(db))
+	r.GET("/api/health", healthCheck(db))
+
 	// Protected routes (authentication required)
 	authGroup := r.Group("/api")
 	authGroup.Use(securityService.AuthMiddleware())
@@ -36,6 +40,37 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, securityService *security.SecurityS
 			adminGroup.GET("/security-settings", getSecuritySettings(db))
 			adminGroup.PUT("/security-settings", updateSecuritySettings(db))
 		}
+
+		// Monetization routes
+		authGroup.GET("/subscription-plans", getSubscriptionPlans(db))
+		authGroup.GET("/subscription", getCompanySubscription(db))
+		authGroup.POST("/subscription", createCompanySubscription(db))
+		authGroup.PUT("/subscription", updateCompanySubscription(db))
+		authGroup.POST("/subscription/cancel", cancelCompanySubscription(db))
+		authGroup.GET("/usage-quotas", getUsageQuotas(db))
+		authGroup.GET("/api-usage", getAPIUsage(db))
+		authGroup.GET("/billing-invoices", getBillingInvoices(db))
+		authGroup.POST("/billing-invoices", createBillingInvoice(db))
+
+		// White-label routes
+		authGroup.GET("/white-label", getWhiteLabelConfig(db))
+		authGroup.PUT("/white-label", updateWhiteLabelConfig(db))
+
+		// POS vendor routes
+		authGroup.GET("/pos-vendors", getPOSVendors(db))
+		authGroup.POST("/pos-vendors", createPOSVendor(db))
+		authGroup.PUT("/pos-vendors/:id", updatePOSVendor(db))
+		authGroup.POST("/pos-vendors/:id/activate", activatePOSVendor(db))
+		authGroup.POST("/pos-vendors/:id/deactivate", deactivatePOSVendor(db))
+		authGroup.GET("/pos-vendors/:id/invoices", getPOSVendorInvoices(db))
+
+		// Marketplace integration routes
+		authGroup.GET("/marketplace-integrations", getMarketplaceIntegrations(db))
+		authGroup.POST("/marketplace-integrations", createMarketplaceIntegration(db))
+		authGroup.PUT("/marketplace-integrations/:id", updateMarketplaceIntegration(db))
+		authGroup.POST("/marketplace-integrations/:id/test", testMarketplaceIntegration(db))
+		authGroup.POST("/marketplace-integrations/:id/disable", disableMarketplaceIntegration(db))
+		authGroup.POST("/pos-vendors/:id/generate-api-key", generatePOSVendorAPIKey(db))
 
 		// Original routes (now protected)
 		// Companies
@@ -108,10 +143,6 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, securityService *security.SecurityS
 		// Performance monitoring
 		authGroup.GET("/performance/metrics", getPerformanceMetrics(db))
 	}
-
-	// Public routes (no authentication required)
-	r.GET("/health", healthCheck(db))
-	r.GET("/api/health", healthCheck(db))
 }
 
 // Company handlers

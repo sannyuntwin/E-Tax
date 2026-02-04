@@ -38,7 +38,7 @@ func InitDB() (*gorm.DB, error) {
 	}
 
 	// Auto migrate the schema
-	err = db.AutoMigrate(&Company{}, &Customer{}, &Invoice{}, &InvoiceItem{}, &Product{}, &InvoiceTemplate{}, &RecurringInvoice{}, &PaymentReminder{}, &Payment{})
+	err = db.AutoMigrate(&Company{}, &Customer{}, &Invoice{}, &InvoiceItem{}, &Product{}, &InvoiceTemplate{}, &RecurringInvoice{}, &PaymentReminder{}, &Payment{}, &User{}, &Session{}, &AuditLog{}, &APIKey{}, &SecuritySettings{}, &LoginAttempt{}, &SubscriptionPlan{}, &CompanySubscription{}, &APIUsage{}, &BillingInvoice{}, &UsageQuota{}, &WhiteLabelConfig{}, &PaymentMethod{}, &MarketplaceIntegration{}, &POSVendorConfig{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}
