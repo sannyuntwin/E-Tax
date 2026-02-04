@@ -45,6 +45,14 @@ export interface Invoice {
   total_amount: number
   status: string
   notes?: string
+  is_draft?: boolean
+  last_saved?: string
+  is_recurring?: boolean
+  recurring_invoice_id?: number
+  payment_status?: string // unpaid, partial, paid, overdue
+  paid_amount?: number
+  payment_date?: string
+  payment_method?: string
   created_at: string
   updated_at: string
   company?: Company
@@ -55,3 +63,4 @@ export interface Invoice {
 // Re-export enhanced types
 export * from './enhancements'
 export * from './recurring'
+export * from './payments'

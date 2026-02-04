@@ -38,7 +38,7 @@ func InitDB() (*gorm.DB, error) {
 	}
 
 	// Auto migrate the schema
-	err = db.AutoMigrate(&Company{}, &Customer{}, &Invoice{}, &InvoiceItem{}, &Product{}, &InvoiceTemplate{}, &RecurringInvoice{})
+	err = db.AutoMigrate(&Company{}, &Customer{}, &Invoice{}, &InvoiceItem{}, &Product{}, &InvoiceTemplate{}, &RecurringInvoice{}, &PaymentReminder{}, &Payment{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}
@@ -86,6 +86,10 @@ type Invoice struct {
 	LastSaved           string   `json:"last_saved"`
 	IsRecurring         bool     `gorm:"default:false" json:"is_recurring"`
 	RecurringInvoiceID  *uint    `json:"recurring_invoice_id"`
+	PaymentStatus       string   `gorm:"default:unpaid" json:"payment_status"` // unpaid, partial, paid, overdue
+	PaidAmount          float64  `gorm:"default:0" json:"paid_amount"`
+	PaymentDate         string   `json:"payment_date"`
+	PaymentMethod       string   `json:"payment_method"`
 	CreatedAt           string   `json:"created_at"`
 	UpdatedAt           string   `json:"updated_at"`
 	

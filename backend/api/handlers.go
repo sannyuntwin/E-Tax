@@ -45,11 +45,25 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	r.POST("/api/recurring-invoices/:id/resume", resumeRecurringInvoice(db))
 	r.GET("/api/recurring-invoices/stats", getRecurringInvoiceStats(db))
 
+	// Payment Reminders
+	r.GET("/api/payment-reminders", getPaymentReminders(db))
+	r.POST("/api/payment-reminders", createPaymentReminder(db))
+	r.POST("/api/payment-reminders/:id/send", sendPaymentReminder(db))
+
+	// Payments
+	r.GET("/api/payments", getPayments(db))
+	r.POST("/api/payments", createPayment(db))
+	r.PUT("/api/payments/:id", updatePayment(db))
+	r.DELETE("/api/payments/:id", deletePayment(db))
+	r.GET("/api/payments/stats", getPaymentStats(db))
+
 	// Invoices
 	r.GET("/api/invoices", getInvoices(db))
 	r.GET("/api/invoices/search", searchInvoices(db)) // Enhanced search
+	r.GET("/api/invoices/enhanced-search", enhancedSearch(db)) // New enhanced search
 	r.POST("/api/invoices", createInvoice(db))
 	r.POST("/api/invoices/draft", saveDraft(db)) // Auto-save drafts
+	r.POST("/api/invoices/:id/duplicate", duplicateInvoice(db)) // New duplicate feature
 	r.GET("/api/invoices/:id", getInvoice(db))
 	r.PUT("/api/invoices/:id", updateInvoice(db))
 	r.DELETE("/api/invoices/:id", deleteInvoice(db))
