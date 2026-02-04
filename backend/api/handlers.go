@@ -8,79 +8,110 @@ import (
 	"gorm.io/gorm"
 )
 
-func SetupRoutes(r *gin.Engine, db *gorm.DB) {
-	// Add performance middleware
-	r.Use(performanceMiddleware())
+func SetupRoutes(r *gin.Engine, db *gorm.DB, securityService *security.SecurityService) {
+	// Authentication routes (no auth required)
+	r.POST("/api/auth/login", login(securityService, db))
+	r.POST("/api/auth/register", register(securityService, db))
+	r.POST("/api/auth/refresh", refresh(securityService, db))
+	r.POST("/api/auth/logout", logout(securityService, db))
 
-	// Companies
-	r.GET("/api/companies", getCompanies(db))
-	r.POST("/api/companies", createCompany(db))
-	r.GET("/api/companies/:id", getCompany(db))
-	r.PUT("/api/companies/:id", updateCompany(db))
-	r.DELETE("/api/companies/:id", deleteCompany(db))
+	// Protected routes (authentication required)
+	authGroup := r.Group("/api")
+	authGroup.Use(securityService.AuthMiddleware())
+	{
+		// User profile routes
+		authGroup.GET("/profile", getProfile(db))
+		authGroup.PUT("/profile", updateProfile(securityService, db))
+		authGroup.POST("/change-password", changePassword(securityService, db))
 
-	// Customers
-	r.GET("/api/customers", getCustomers(db))
-	r.POST("/api/customers", createCustomer(db))
-	r.GET("/api/customers/:id", getCustomer(db))
-	r.PUT("/api/customers/:id", updateCustomer(db))
-	r.DELETE("/api/customers/:id", deleteCustomer(db))
+		// Admin only routes
+		adminGroup := authGroup.Group("/admin")
+		adminGroup.Use(security.RequireRole("admin"))
+		{
+			adminGroup.GET("/users", getUsers(db))
+			adminGroup.POST("/users", createUser(db))
+			adminGroup.PUT("/users/:id", updateUser(db))
+			adminGroup.DELETE("/users/:id", deleteUser(db))
+			adminGroup.GET("/audit-logs", getAuditLogs(db))
+			adminGroup.GET("/security-settings", getSecuritySettings(db))
+			adminGroup.PUT("/security-settings", updateSecuritySettings(db))
+		}
 
-	// Products
-	r.GET("/api/products", getProducts(db))
-	r.POST("/api/products", createProduct(db))
+		// Original routes (now protected)
+		// Companies
+		authGroup.GET("/companies", getCompanies(db))
+		authGroup.POST("/companies", createCompany(db))
+		authGroup.GET("/companies/:id", getCompany(db))
+		authGroup.PUT("/companies/:id", updateCompany(db))
+		authGroup.DELETE("/companies/:id", deleteCompany(db))
 
-	// Dashboard
-	r.GET("/api/dashboard/stats", getDashboardStats(db))
+		// Customers
+		authGroup.GET("/customers", getCustomers(db))
+		authGroup.POST("/customers", createCustomer(db))
+		authGroup.GET("/customers/:id", getCustomer(db))
+		authGroup.PUT("/customers/:id", updateCustomer(db))
+		authGroup.DELETE("/customers/:id", deleteCustomer(db))
 
-	// Invoice Templates
-	r.GET("/api/invoice-templates", getInvoiceTemplates(db))
-	r.POST("/api/invoice-templates/:templateId/create", createInvoiceFromTemplate(db))
+		// Products
+		authGroup.GET("/products", getProducts(db))
+		authGroup.POST("/products", createProduct(db))
 
-	// Recurring Invoices
-	r.GET("/api/recurring-invoices", getRecurringInvoices(db))
-	r.POST("/api/recurring-invoices", createRecurringInvoice(db))
-	r.GET("/api/recurring-invoices/:id", getRecurringInvoices(db)) // Reuse for single
-	r.PUT("/api/recurring-invoices/:id", updateRecurringInvoice(db))
-	r.DELETE("/api/recurring-invoices/:id", deleteRecurringInvoice(db))
-	r.POST("/api/recurring-invoices/:id/generate", generateInvoicesFromRecurring(db))
-	r.POST("/api/recurring-invoices/:id/pause", pauseRecurringInvoice(db))
-	r.POST("/api/recurring-invoices/:id/resume", resumeRecurringInvoice(db))
-	r.GET("/api/recurring-invoices/stats", getRecurringInvoiceStats(db))
+		// Dashboard
+		authGroup.GET("/dashboard/stats", getDashboardStats(db))
 
-	// Payment Reminders
-	r.GET("/api/payment-reminders", getPaymentReminders(db))
-	r.POST("/api/payment-reminders", createPaymentReminder(db))
-	r.POST("/api/payment-reminders/:id/send", sendPaymentReminder(db))
+		// Invoice Templates
+		authGroup.GET("/invoice-templates", getInvoiceTemplates(db))
+		authGroup.POST("/invoice-templates/:templateId/create", createInvoiceFromTemplate(db))
 
-	// Payments
-	r.GET("/api/payments", getPayments(db))
-	r.POST("/api/payments", createPayment(db))
-	r.PUT("/api/payments/:id", updatePayment(db))
-	r.DELETE("/api/payments/:id", deletePayment(db))
-	r.GET("/api/payments/stats", getPaymentStats(db))
+		// Recurring Invoices
+		authGroup.GET("/recurring-invoices", getRecurringInvoices(db))
+		authGroup.POST("/recurring-invoices", createRecurringInvoice(db))
+		authGroup.GET("/recurring-invoices/:id", getRecurringInvoices(db)) // Reuse for single
+		authGroup.PUT("/recurring-invoices/:id", updateRecurringInvoice(db))
+		authGroup.DELETE("/recurring-invoices/:id", deleteRecurringInvoice(db))
+		authGroup.POST("/recurring-invoices/:id/generate", generateInvoicesFromRecurring(db))
+		authGroup.POST("/recurring-invoices/:id/pause", pauseRecurringInvoice(db))
+		authGroup.POST("/recurring-invoices/:id/resume", resumeRecurringInvoice(db))
+		authGroup.GET("/recurring-invoices/stats", getRecurringInvoiceStats(db))
 
-	// Invoices - Performance optimized versions
-	r.GET("/api/invoices", getInvoicesPaginated(db)) // New paginated version
-	r.GET("/api/invoices/search", searchInvoices(db)) // Original search
-	r.GET("/api/invoices/enhanced-search", enhancedSearch(db)) // New enhanced search
-	r.GET("/api/invoices/search-optimized", searchInvoicesOptimized(db)) // Optimized search
-	r.POST("/api/invoices", createInvoice(db))
-	r.POST("/api/invoices/draft", saveDraft(db)) // Auto-save drafts
-	r.POST("/api/invoices/:id/duplicate", duplicateInvoice(db)) // New duplicate feature
-	r.GET("/api/invoices/:id", getInvoice(db))
-	r.PUT("/api/invoices/:id", updateInvoice(db))
-	r.DELETE("/api/invoices/:id", deleteInvoice(db))
-	r.GET("/api/invoices/:id/pdf", generateInvoicePDF(db))
-	r.GET("/api/invoices/:id/xml", generateInvoiceXML(db))
+		// Payment Reminders
+		authGroup.GET("/payment-reminders", getPaymentReminders(db))
+		authGroup.POST("/payment-reminders", createPaymentReminder(db))
+		authGroup.POST("/payment-reminders/:id/send", sendPaymentReminder(db))
 
-	// Invoice Items
-	r.POST("/api/invoices/:id/items", addInvoiceItem(db))
-	r.PUT("/api/invoice-items/:id", updateInvoiceItem(db))
-	r.DELETE("/api/invoice-items/:id", deleteInvoiceItem(db))
+		// Payments
+		authGroup.GET("/payments", getPayments(db))
+		authGroup.POST("/payments", createPayment(db))
+		authGroup.PUT("/payments/:id", updatePayment(db))
+		authGroup.DELETE("/payments/:id", deletePayment(db))
+		authGroup.GET("/payments/stats", getPaymentStats(db))
 
-	// Performance monitoring
-	r.GET("/api/performance/metrics", getPerformanceMetrics(db))
+		// Invoices - Performance optimized versions
+		authGroup.GET("/invoices", getInvoicesPaginated(db)) // New paginated version
+		authGroup.GET("/invoices/search", searchInvoices(db)) // Original search
+		authGroup.GET("/invoices/enhanced-search", enhancedSearch(db)) // New enhanced search
+		authGroup.GET("/invoices/search-optimized", searchInvoicesOptimized(db)) // Optimized search
+		authGroup.POST("/invoices", createInvoice(db))
+		authGroup.POST("/invoices/draft", saveDraft(db)) // Auto-save drafts
+		authGroup.POST("/invoices/:id/duplicate", duplicateInvoice(db)) // New duplicate feature
+		authGroup.GET("/invoices/:id", getInvoice(db))
+		authGroup.PUT("/invoices/:id", updateInvoice(db))
+		authGroup.DELETE("/invoices/:id", deleteInvoice(db))
+		authGroup.GET("/invoices/:id/pdf", generateInvoicePDF(db))
+		authGroup.GET("/invoices/:id/xml", generateInvoiceXML(db))
+
+		// Invoice Items
+		authGroup.POST("/invoices/:id/items", addInvoiceItem(db))
+		authGroup.PUT("/invoice-items/:id", updateInvoiceItem(db))
+		authGroup.DELETE("/invoice-items/:id", deleteInvoiceItem(db))
+
+		// Performance monitoring
+		authGroup.GET("/performance/metrics", getPerformanceMetrics(db))
+	}
+
+	// Public routes (no authentication required)
+	r.GET("/health", healthCheck(db))
+	r.GET("/api/health", healthCheck(db))
 }
 
 // Company handlers
