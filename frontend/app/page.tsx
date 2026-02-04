@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, FileText, Download, Eye, Trash2, Edit, BarChart3, HelpCircle } from 'lucide-react'
+import { Plus, FileText, Download, Eye, Trash2, Edit, BarChart3, HelpCircle, RefreshCw } from 'lucide-react'
 import InvoiceForm from '@/components/InvoiceForm'
 import InvoiceList from '@/components/InvoiceList'
 import InvoiceView from '@/components/InvoiceView'
@@ -11,8 +11,11 @@ import ProductCatalog from '@/components/ProductCatalog'
 import InvoiceTemplateManager from '@/components/InvoiceTemplateManager'
 import KeyboardShortcuts from '@/components/KeyboardShortcuts'
 import DarkModeToggle from '@/components/DarkModeToggle'
+import RecurringInvoicesDashboard from '@/components/RecurringInvoicesDashboard'
+import RecurringInvoiceForm from '@/components/RecurringInvoiceForm'
+import RecurringInvoicesList from '@/components/RecurringInvoicesList'
 import { ThemeProvider } from '@/contexts/ThemeContext'
-import { Invoice, Company, Customer, SearchFilters, Product, InvoiceTemplate } from '@/types'
+import { Invoice, Company, Customer, SearchFilters, Product, InvoiceTemplate, RecurringInvoice } from '@/types'
 
 function AppContent() {
   const [currentView, setCurrentView] = useState<'dashboard' | 'invoices'>('dashboard')
@@ -22,8 +25,12 @@ function AppContent() {
   const [showForm, setShowForm] = useState(false)
   const [showProductCatalog, setShowProductCatalog] = useState(false)
   const [showTemplateManager, setShowTemplateManager] = useState(false)
+  const [showRecurringDashboard, setShowRecurringDashboard] = useState(false)
+  const [showRecurringForm, setShowRecurringForm] = useState(false)
+  const [recurringInvoices, setRecurringInvoices] = useState<RecurringInvoice[]>([])
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null)
+  const [editingRecurring, setEditingRecurring] = useState<RecurringInvoice | null>(null)
   const [filters, setFilters] = useState<SearchFilters>({})
   const [loading, setLoading] = useState(true)
 
@@ -38,6 +45,133 @@ function AppContent() {
       fetchInvoices()
     }
   }, [currentView, filters])
+
+  useEffect(() => {
+    if (showRecurringDashboard) {
+      fetchRecurringInvoices()
+    }
+  }, [showRecurringDashboard])
+
+  const fetchRecurringInvoices = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/recurring-invoices`)
+      if (response.ok) {
+        const data = await response.json()
+        setRecurringInvoices(data)
+      }
+    } catch (error) {
+      console.error('Error fetching recurring invoices:', error)
+    }
+  }
+
+  const handleCreateRecurringInvoice = async (recurringData: any) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/recurring-invoices`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(recurringData),
+      })
+
+      if (response.ok) {
+        const newRecurring = await response.json()
+        setShowRecurringForm(false)
+        setShowRecurringDashboard(true)
+        fetchRecurringInvoices()
+      }
+    } catch (error) {
+      console.error('Error creating recurring invoice:', error)
+    }
+  }
+
+  const handleUpdateRecurringInvoice = async (recurringData: any) => {
+    if (!editingRecurring) return
+
+    try {
+      const response = await fetch(`${API_BASE}/api/recurring-invoices/${editingRecurring.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(recurringData),
+      })
+
+      if (response.ok) {
+        const updatedRecurring = await response.json()
+        setRecurringInvoices(recurringInvoices.map(inv => inv.id === updatedRecurring.id ? updatedRecurring : inv))
+        setEditingRecurring(null)
+        setShowRecurringForm(false)
+        fetchRecurringInvoices()
+      }
+    } catch (error) {
+      console.error('Error updating recurring invoice:', error)
+    }
+  }
+
+  const handleDeleteRecurringInvoice = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this recurring invoice? This will stop all future invoice generation.')) return
+
+    try {
+      const response = await fetch(`${API_BASE}/api/recurring-invoices/${id}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        setRecurringInvoices(recurringInvoices.filter(inv => inv.id !== id))
+      }
+    } catch (error) {
+      console.error('Error deleting recurring invoice:', error)
+    }
+  }
+
+  const handleGenerateInvoice = async (id: number) => {
+    if (!confirm('Generate next invoice from this recurring schedule?')) return
+
+    try {
+      const response = await fetch(`${API_BASE}/api/recurring-invoices/${id}/generate`, {
+        method: 'POST',
+      })
+
+      if (response.ok) {
+        const invoice = await response.json()
+        console.log('Generated invoice:', invoice)
+        fetchInvoices()
+        fetchRecurringInvoices()
+      }
+    } catch (error) {
+      console.error('Error generating invoice:', error)
+    }
+  }
+
+  const handlePauseRecurringInvoice = async (id: number) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/recurring-invoices/${id}/pause`, {
+        method: 'POST',
+      })
+
+      if (response.ok) {
+        setRecurringInvoices(recurringInvoices.map(inv => inv.id === id ? { ...inv, is_active: false } : inv))
+      }
+    } catch (error) {
+      console.error('Error pausing recurring invoice:', error)
+    }
+  }
+
+  const handleResumeRecurringInvoice = async (id: number) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/recurring-invoices/${id}/resume`, {
+        method: 'POST',
+      })
+
+      if (response.ok) {
+        setRecurringInvoices(recurringInvoices.map(inv => inv.id === id ? { ...inv, is_active: true } : inv))
+      }
+    } catch (error) {
+      console.error('Error resuming recurring invoice:', error)
+    }
+  }
+
 
   const fetchData = async () => {
     try {

@@ -34,6 +34,17 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	r.GET("/api/invoice-templates", getInvoiceTemplates(db))
 	r.POST("/api/invoice-templates/:templateId/create", createInvoiceFromTemplate(db))
 
+	// Recurring Invoices
+	r.GET("/api/recurring-invoices", getRecurringInvoices(db))
+	r.POST("/api/recurring-invoices", createRecurringInvoice(db))
+	r.GET("/api/recurring-invoices/:id", getRecurringInvoices(db)) // Reuse for single
+	r.PUT("/api/recurring-invoices/:id", updateRecurringInvoice(db))
+	r.DELETE("/api/recurring-invoices/:id", deleteRecurringInvoice(db))
+	r.POST("/api/recurring-invoices/:id/generate", generateInvoicesFromRecurring(db))
+	r.POST("/api/recurring-invoices/:id/pause", pauseRecurringInvoice(db))
+	r.POST("/api/recurring-invoices/:id/resume", resumeRecurringInvoice(db))
+	r.GET("/api/recurring-invoices/stats", getRecurringInvoiceStats(db))
+
 	// Invoices
 	r.GET("/api/invoices", getInvoices(db))
 	r.GET("/api/invoices/search", searchInvoices(db)) // Enhanced search

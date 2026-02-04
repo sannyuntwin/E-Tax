@@ -38,7 +38,7 @@ func InitDB() (*gorm.DB, error) {
 	}
 
 	// Auto migrate the schema
-	err = db.AutoMigrate(&Company{}, &Customer{}, &Invoice{}, &InvoiceItem{})
+	err = db.AutoMigrate(&Company{}, &Customer{}, &Invoice{}, &InvoiceItem{}, &Product{}, &InvoiceTemplate{}, &RecurringInvoice{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}
@@ -71,19 +71,23 @@ type Customer struct {
 }
 
 type Invoice struct {
-	ID          uint     `gorm:"primaryKey" json:"id"`
-	InvoiceNo   string   `gorm:"unique;not null" json:"invoice_no"`
-	IssueDate   string   `gorm:"not null" json:"issue_date"`
-	DueDate     string   `json:"due_date"`
-	CompanyID   uint     `json:"company_id"`
-	CustomerID  uint     `json:"customer_id"`
-	Subtotal    float64  `gorm:"default:0" json:"subtotal"`
-	VATAmount   float64  `gorm:"default:0" json:"vat_amount"`
-	TotalAmount float64  `gorm:"default:0" json:"total_amount"`
-	Status      string   `gorm:"default:draft" json:"status"`
-	Notes       string   `json:"notes"`
-	CreatedAt   string   `json:"created_at"`
-	UpdatedAt   string   `json:"updated_at"`
+	ID                  uint     `gorm:"primaryKey" json:"id"`
+	InvoiceNo           string   `gorm:"unique;not null" json:"invoice_no"`
+	IssueDate           string   `gorm:"not null" json:"issue_date"`
+	DueDate             string   `json:"due_date"`
+	CompanyID           uint     `json:"company_id"`
+	CustomerID          uint     `json:"customer_id"`
+	Subtotal            float64  `gorm:"default:0" json:"subtotal"`
+	VATAmount           float64  `gorm:"default:0" json:"vat_amount"`
+	TotalAmount         float64  `gorm:"default:0" json:"total_amount"`
+	Status              string   `gorm:"default:draft" json:"status"`
+	Notes               string   `json:"notes"`
+	IsDraft             bool     `gorm:"default:false" json:"is_draft"`
+	LastSaved           string   `json:"last_saved"`
+	IsRecurring         bool     `gorm:"default:false" json:"is_recurring"`
+	RecurringInvoiceID  *uint    `json:"recurring_invoice_id"`
+	CreatedAt           string   `json:"created_at"`
+	UpdatedAt           string   `json:"updated_at"`
 	
 	Company    Company       `gorm:"foreignKey:CompanyID" json:"company"`
 	Customer   Customer      `gorm:"foreignKey:CustomerID" json:"customer"`

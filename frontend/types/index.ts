@@ -54,3 +54,4 @@ export interface Invoice {
 
 // Re-export enhanced types
 export * from './enhancements'
+export * from './recurring'
