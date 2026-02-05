@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { CreditCard, FileText, Download, Plus, Edit, Trash2, AlertCircle, CheckCircle, Clock } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 interface BillingInvoice {
   id: number
@@ -47,6 +48,37 @@ export default function BillingManagement({ onAddPaymentMethod, onUpgradePlan }:
   const [statusFilter, setStatusFilter] = useState<string>('')
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+
+  const confirmAction = (message: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      toast((t) => (
+        <div className="flex items-center space-x-4">
+          <span>{message}</span>
+          <button
+            onClick={() => {
+              toast.dismiss(t.id)
+              resolve(true)
+            }}
+            className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Yes
+          </button>
+          <button
+            onClick={() => {
+              toast.dismiss(t.id)
+              resolve(false)
+            }}
+            className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+          >
+            No
+          </button>
+        </div>
+      ), {
+        duration: 0,
+        position: 'top-center',
+      })
+    })
+  }
 
   useEffect(() => {
     fetchBillingData()
@@ -173,23 +205,25 @@ export default function BillingManagement({ onAddPaymentMethod, onUpgradePlan }:
   }
 
   const deletePaymentMethod = async (paymentMethodId: number) => {
-    if (!confirm('Are you sure you want to delete this payment method?')) {
-      return
-    }
+    if (await confirmAction('Are you sure you want to delete this payment method?')) {
+      try {
+        const response = await fetch(`${API_BASE}/api/payment-methods/${paymentMethodId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        })
 
-    try {
-      const response = await fetch(`${API_BASE}/api/payment-methods/${paymentMethodId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
-      })
-
-      if (response.ok) {
-        fetchBillingData()
+        if (response.ok) {
+          fetchBillingData()
+          toast.success('Payment method deleted successfully')
+        } else {
+          toast.error('Failed to delete payment method')
+        }
+      } catch (error) {
+        console.error('Error deleting payment method:', error)
+        toast.error('Error deleting payment method')
       }
-    } catch (error) {
-      console.error('Error deleting payment method:', error)
     }
   }
 

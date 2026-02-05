@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, FileText, Download, Eye, Trash2, Edit, BarChart3, HelpCircle, RefreshCw } from 'lucide-react'
+import toast from 'react-hot-toast'
 import InvoiceForm from '@/components/InvoiceForm'
 import InvoiceList from '@/components/InvoiceList'
 import InvoiceView from '@/components/InvoiceView'
@@ -35,6 +36,37 @@ function AppContent() {
   const [loading, setLoading] = useState(true)
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+
+  const confirmAction = (message: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      toast((t) => (
+        <div className="flex items-center space-x-4">
+          <span>{message}</span>
+          <button
+            onClick={() => {
+              toast.dismiss(t.id)
+              resolve(true)
+            }}
+            className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Yes
+          </button>
+          <button
+            onClick={() => {
+              toast.dismiss(t.id)
+              resolve(false)
+            }}
+            className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+          >
+            No
+          </button>
+        </div>
+      ), {
+        duration: 0, // Don't auto-dismiss
+        position: 'top-center',
+      })
+    })
+  }
 
   useEffect(() => {
     fetchData()
@@ -110,37 +142,45 @@ function AppContent() {
   }
 
   const handleDeleteRecurringInvoice = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this recurring invoice? This will stop all future invoice generation.')) return
+    if (await confirmAction('Are you sure you want to delete this recurring invoice? This will stop all future invoice generation.')) {
+      try {
+        const response = await fetch(`${API_BASE}/api/recurring-invoices/${id}`, {
+          method: 'DELETE',
+        })
 
-    try {
-      const response = await fetch(`${API_BASE}/api/recurring-invoices/${id}`, {
-        method: 'DELETE',
-      })
-
-      if (response.ok) {
-        setRecurringInvoices(recurringInvoices.filter(inv => inv.id !== id))
+        if (response.ok) {
+          setRecurringInvoices(recurringInvoices.filter(inv => inv.id !== id))
+          toast.success('Recurring invoice deleted successfully')
+        } else {
+          toast.error('Failed to delete recurring invoice')
+        }
+      } catch (error) {
+        console.error('Error deleting recurring invoice:', error)
+        toast.error('Error deleting recurring invoice')
       }
-    } catch (error) {
-      console.error('Error deleting recurring invoice:', error)
     }
   }
 
   const handleGenerateInvoice = async (id: number) => {
-    if (!confirm('Generate next invoice from this recurring schedule?')) return
+    if (await confirmAction('Generate next invoice from this recurring schedule?')) {
+      try {
+        const response = await fetch(`${API_BASE}/api/recurring-invoices/${id}/generate`, {
+          method: 'POST',
+        })
 
-    try {
-      const response = await fetch(`${API_BASE}/api/recurring-invoices/${id}/generate`, {
-        method: 'POST',
-      })
-
-      if (response.ok) {
-        const invoice = await response.json()
-        console.log('Generated invoice:', invoice)
-        fetchInvoices()
-        fetchRecurringInvoices()
+        if (response.ok) {
+          const invoice = await response.json()
+          console.log('Generated invoice:', invoice)
+          fetchInvoices()
+          fetchRecurringInvoices()
+          toast.success('Invoice generated successfully')
+        } else {
+          toast.error('Failed to generate invoice')
+        }
+      } catch (error) {
+        console.error('Error generating invoice:', error)
+        toast.error('Error generating invoice')
       }
-    } catch (error) {
-      console.error('Error generating invoice:', error)
     }
   }
 
@@ -371,18 +411,22 @@ function AppContent() {
   }
 
   const handleDeleteInvoice = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this invoice?')) return
+    if (await confirmAction('Are you sure you want to delete this invoice?')) {
+      try {
+        const response = await fetch(`${API_BASE}/api/invoices/${id}`, {
+          method: 'DELETE',
+        })
 
-    try {
-      const response = await fetch(`${API_BASE}/api/invoices/${id}`, {
-        method: 'DELETE',
-      })
-
-      if (response.ok) {
-        setInvoices(invoices.filter(inv => inv.id !== id))
+        if (response.ok) {
+          setInvoices(invoices.filter(inv => inv.id !== id))
+          toast.success('Invoice deleted successfully')
+        } else {
+          toast.error('Failed to delete invoice')
+        }
+      } catch (error) {
+        console.error('Error deleting invoice:', error)
+        toast.error('Error deleting invoice')
       }
-    } catch (error) {
-      console.error('Error deleting invoice:', error)
     }
   }
 
@@ -506,7 +550,9 @@ function AppContent() {
             <div className="flex items-center space-x-4">
               <DarkModeToggle />
               <button
-                onClick={() => alert('Press ? for keyboard shortcuts')}
+                onClick={() => toast('Press ? for keyboard shortcuts', {
+                  icon: '⌨️',
+                })}
                 className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                 title="Keyboard Shortcuts (?)"
               >

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Save, FileText, Copy, Trash2, Plus } from 'lucide-react'
 import { InvoiceTemplate } from '@/types'
+import toast from 'react-hot-toast'
 
 interface InvoiceTemplateManagerProps {
   onSelectTemplate: (template: InvoiceTemplate) => void
@@ -18,12 +19,43 @@ export default function InvoiceTemplateManager({
   customers 
 }: InvoiceTemplateManagerProps) {
   const [templates, setTemplates] = useState<InvoiceTemplate[]>([])
+  const [loading, setLoading] = useState(true)
   const [showSaveForm, setShowSaveForm] = useState(false)
   const [templateName, setTemplateName] = useState('')
   const [templateDescription, setTemplateDescription] = useState('')
-  const [loading, setLoading] = useState(true)
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+
+  const confirmAction = (message: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      toast((t) => (
+        <div className="flex items-center space-x-4">
+          <span>{message}</span>
+          <button
+            onClick={() => {
+              toast.dismiss(t.id)
+              resolve(true)
+            }}
+            className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Yes
+          </button>
+          <button
+            onClick={() => {
+              toast.dismiss(t.id)
+              resolve(false)
+            }}
+            className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+          >
+            No
+          </button>
+        </div>
+      ), {
+        duration: 0,
+        position: 'top-center',
+      })
+    })
+  }
 
   useEffect(() => {
     fetchTemplates()
@@ -62,17 +94,22 @@ export default function InvoiceTemplateManager({
   }
 
   const handleDeleteTemplate = async (templateId: number) => {
-    if (!confirm('Are you sure you want to delete this template?')) return
+    if (await confirmAction('Are you sure you want to delete this template?')) {
+      try {
+        const response = await fetch(`${API_BASE}/api/invoice-templates/${templateId}`, {
+          method: 'DELETE',
+        })
 
-    try {
-      const response = await fetch(`${API_BASE}/api/invoice-templates/${templateId}`, {
-        method: 'DELETE'
-      })
-      if (response.ok) {
-        setTemplates(templates.filter(t => t.id !== templateId))
+        if (response.ok) {
+          fetchTemplates()
+          toast.success('Template deleted successfully')
+        } else {
+          toast.error('Failed to delete template')
+        }
+      } catch (error) {
+        console.error('Error deleting template:', error)
+        toast.error('Error deleting template')
       }
-    } catch (error) {
-      console.error('Error deleting template:', error)
     }
   }
 
