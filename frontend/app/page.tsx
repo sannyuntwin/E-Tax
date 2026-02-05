@@ -180,15 +180,24 @@ function AppContent() {
         fetch(`${API_BASE}/api/customers`)
       ])
 
-      const [companiesData, customersData] = await Promise.all([
-        companiesRes.json(),
-        customersRes.json()
-      ])
-
-      setCompanies(companiesData)
-      setCustomers(customersData)
+      if (companiesRes.ok && customersRes.ok) {
+        const [companiesData, customersData] = await Promise.all([
+          companiesRes.json(),
+          customersRes.json()
+        ])
+        setCompanies(companiesData)
+        setCustomers(customersData)
+      } else {
+        // Set empty data when API is not available
+        setCompanies([])
+        setCustomers([])
+        console.warn('API not available - running in demo mode')
+      }
     } catch (error) {
       console.error('Error fetching data:', error)
+      // Set empty data when API fails
+      setCompanies([])
+      setCustomers([])
     } finally {
       setLoading(false)
     }
