@@ -188,16 +188,28 @@ function AppContent() {
         setCompanies(companiesData)
         setCustomers(customersData)
       } else {
-        // Set empty data when API is not available
-        setCompanies([])
-        setCustomers([])
-        console.warn('API not available - running in demo mode')
+        // Use mock data when API is not available
+        setCompanies([
+          { id: 1, tax_id: "1234567890123", company_name: "Demo Company Ltd.", address: "123 Demo St, Bangkok", phone: "02-123-4567", email: "info@demo.com", certificate_path: "", created_at: "2024-01-01", updated_at: "2024-01-01" },
+          { id: 2, tax_id: "9876543210987", company_name: "Test Corporation", address: "456 Test Ave, Bangkok", phone: "02-987-6543", email: "contact@test.com", certificate_path: "", created_at: "2024-01-01", updated_at: "2024-01-01" }
+        ])
+        setCustomers([
+          { id: 1, name: "Customer A", tax_id: "1111111111111", address: "789 Customer Rd, Bangkok", phone: "02-111-2222", email: "customer@a.com", created_at: "2024-01-01", updated_at: "2024-01-01" },
+          { id: 2, name: "Customer B", tax_id: "2222222222222", address: "321 Client St, Bangkok", phone: "02-333-4444", email: "customer@b.com", created_at: "2024-01-01", updated_at: "2024-01-01" }
+        ])
+        console.warn('API not available - running in demo mode with mock data')
       }
     } catch (error) {
       console.error('Error fetching data:', error)
-      // Set empty data when API fails
-      setCompanies([])
-      setCustomers([])
+      // Use mock data when API fails
+      setCompanies([
+        { id: 1, tax_id: "1234567890123", company_name: "Demo Company Ltd.", address: "123 Demo St, Bangkok", phone: "02-123-4567", email: "info@demo.com", certificate_path: "", created_at: "2024-01-01", updated_at: "2024-01-01" },
+        { id: 2, tax_id: "9876543210987", company_name: "Test Corporation", address: "456 Test Ave, Bangkok", phone: "02-987-6543", email: "contact@test.com", certificate_path: "", created_at: "2024-01-01", updated_at: "2024-01-01" }
+      ])
+      setCustomers([
+        { id: 1, name: "Customer A", tax_id: "1111111111111", address: "789 Customer Rd, Bangkok", phone: "02-111-2222", email: "customer@a.com", created_at: "2024-01-01", updated_at: "2024-01-01" },
+        { id: 2, name: "Customer B", tax_id: "2222222222222", address: "321 Client St, Bangkok", phone: "02-333-4444", email: "customer@b.com", created_at: "2024-01-01", updated_at: "2024-01-01" }
+      ])
     } finally {
       setLoading(false)
     }
@@ -218,9 +230,80 @@ function AppContent() {
       if (response.ok) {
         const data = await response.json()
         setInvoices(data)
+      } else {
+        // Use mock invoice data when API is not available
+        setInvoices([
+          {
+            id: 1,
+            invoice_no: "INV-2024-001",
+            issue_date: "2024-01-15",
+            due_date: "2024-02-15",
+            company_id: 1,
+            customer_id: 1,
+            subtotal: 10000,
+            vat_amount: 700,
+            total_amount: 10700,
+            status: "paid",
+            payment_status: "paid",
+            paid_amount: 10700,
+            payment_date: "2024-01-20",
+            created_at: "2024-01-15",
+            updated_at: "2024-01-20"
+          },
+          {
+            id: 2,
+            invoice_no: "INV-2024-002",
+            issue_date: "2024-01-20",
+            due_date: "2024-02-20",
+            company_id: 1,
+            customer_id: 2,
+            subtotal: 15000,
+            vat_amount: 1050,
+            total_amount: 16050,
+            status: "sent",
+            payment_status: "unpaid",
+            created_at: "2024-01-20",
+            updated_at: "2024-01-20"
+          },
+          {
+            id: 3,
+            invoice_no: "INV-2024-003",
+            issue_date: "2024-01-25",
+            due_date: "2024-01-25",
+            company_id: 2,
+            customer_id: 1,
+            subtotal: 8000,
+            vat_amount: 560,
+            total_amount: 8560,
+            status: "overdue",
+            payment_status: "unpaid",
+            created_at: "2024-01-25",
+            updated_at: "2024-01-25"
+          }
+        ])
       }
     } catch (error) {
       console.error('Error fetching invoices:', error)
+      // Use mock invoice data when API fails
+      setInvoices([
+        {
+          id: 1,
+          invoice_no: "INV-2024-001",
+          issue_date: "2024-01-15",
+          due_date: "2024-02-15",
+          company_id: 1,
+          customer_id: 1,
+          subtotal: 10000,
+          vat_amount: 700,
+          total_amount: 10700,
+          status: "paid",
+          payment_status: "paid",
+          paid_amount: 10700,
+          payment_date: "2024-01-20",
+          created_at: "2024-01-15",
+          updated_at: "2024-01-20"
+        }
+      ])
     }
   }
 

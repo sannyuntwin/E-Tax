@@ -50,7 +50,7 @@ func login(securityService *security.SecurityService, db *gorm.DB) gin.HandlerFu
 		}
 
 		// Verify password
-		if err := securityService.VerifyPassword(loginData.Password, user.Password); err != nil {
+		if valid, err := securityService.VerifyPassword(loginData.Password, user.Password); !valid || err != nil {
 			// Log failed attempt
 			logLoginAttempt(db, loginData.Username, c.ClientIP(), c.GetHeader("User-Agent"), false, "invalid_password")
 			incrementFailedAttempts(db, user.ID)
@@ -269,7 +269,7 @@ func register(securityService *security.SecurityService, db *gorm.DB) gin.Handle
 		}
 
 		// Log registration
-		logAuditEvent(db, &user.ID, "register", "user", user.ID, "User registered", c.ClientIP(), c.GetHeader("User-Agent"))
+		logAuditEvent(db, &user.ID, "register", "user", &user.ID, "User registered", c.ClientIP(), c.GetHeader("User-Agent"))
 
 		c.JSON(http.StatusCreated, gin.H{
 			"message": "User created successfully",
@@ -321,6 +321,12 @@ func updateProfile(securityService *security.SecurityService, db *gorm.DB) gin.H
 			return
 		}
 
+		userIDUint, ok := userID.(uint)
+		if !ok {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
+			return
+		}
+
 		var updateData struct {
 			FirstName string `json:"first_name"`
 			LastName  string `json:"last_name"`
@@ -343,7 +349,7 @@ func updateProfile(securityService *security.SecurityService, db *gorm.DB) gin.H
 		updateData.LastName = security.SanitizeInput(updateData.LastName)
 
 		var user database.User
-		if err := db.First(&user, userID).Error; err != nil {
+		if err := db.First(&user, userIDUint).Error; err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 			return
 		}
@@ -367,7 +373,7 @@ func updateProfile(securityService *security.SecurityService, db *gorm.DB) gin.H
 		}
 
 		// Log update
-		logAuditEvent(db, &userID, "update", "user", user.ID, "Profile updated", c.ClientIP(), c.GetHeader("User-Agent"))
+		logAuditEvent(db, &userIDUint, "update", "user", &user.ID, "Profile updated", c.ClientIP(), c.GetHeader("User-Agent"))
 
 		c.JSON(http.StatusOK, gin.H{
 			"message": "Profile updated successfully",
@@ -391,6 +397,12 @@ func changePassword(securityService *security.SecurityService, db *gorm.DB) gin.
 			return
 		}
 
+		userIDUint, ok := userID.(uint)
+		if !ok {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type"})
+			return
+		}
+
 		var passwordData struct {
 			CurrentPassword string `json:"current_password" binding:"required"`
 			NewPassword     string `json:"new_password" binding:"required"`
@@ -408,13 +420,13 @@ func changePassword(securityService *security.SecurityService, db *gorm.DB) gin.
 		}
 
 		var user database.User
-		if err := db.First(&user, userID).Error; err != nil {
+		if err := db.First(&user, userIDUint).Error; err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 			return
 		}
 
 		// Verify current password
-		if err := securityService.VerifyPassword(passwordData.CurrentPassword, user.Password); err != nil {
+		if valid, err := securityService.VerifyPassword(passwordData.CurrentPassword, user.Password); !valid || err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Current password is incorrect"})
 			return
 		}
@@ -436,7 +448,7 @@ func changePassword(securityService *security.SecurityService, db *gorm.DB) gin.
 		}
 
 		// Log password change
-		logAuditEvent(db, &userID, "change_password", "user", user.ID, "Password changed", c.ClientIP(), c.GetHeader("User-Agent"))
+		logAuditEvent(db, &userIDUint, "change_password", "user", &user.ID, "Password changed", c.ClientIP(), c.GetHeader("User-Agent"))
 
 		c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully"})
 	}

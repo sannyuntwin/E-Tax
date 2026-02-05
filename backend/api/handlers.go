@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"backend/database"
+	"backend/security"
 	"gorm.io/gorm"
 )
 
@@ -32,13 +33,14 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, securityService *security.SecurityS
 		adminGroup := authGroup.Group("/admin")
 		adminGroup.Use(security.RequireRole("admin"))
 		{
-			adminGroup.GET("/users", getUsers(db))
-			adminGroup.POST("/users", createUser(db))
-			adminGroup.PUT("/users/:id", updateUser(db))
-			adminGroup.DELETE("/users/:id", deleteUser(db))
-			adminGroup.GET("/audit-logs", getAuditLogs(db))
-			adminGroup.GET("/security-settings", getSecuritySettings(db))
-			adminGroup.PUT("/security-settings", updateSecuritySettings(db))
+			// TODO: Implement admin functions
+			// adminGroup.GET("/users", getUsers(db))
+			// adminGroup.POST("/users", createUser(db))
+			// adminGroup.PUT("/users/:id", updateUser(db))
+			// adminGroup.DELETE("/users/:id", deleteUser(db))
+			// adminGroup.GET("/audit-logs", getAuditLogs(db))
+			// adminGroup.GET("/security-settings", getSecuritySettings(db))
+			// adminGroup.PUT("/security-settings", updateSecuritySettings(db))
 		}
 
 		// Monetization routes

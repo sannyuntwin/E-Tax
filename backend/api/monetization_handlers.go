@@ -43,7 +43,7 @@ func getCompanySubscription(db *gorm.DB) gin.HandlerFunc {
 
 		// Get company subscription
 		var subscription database.CompanySubscription
-		err := db.Preload("SubscriptionPlan").Where("company_id = ?", user.ID).First(&subscription)
+		err := db.Preload("SubscriptionPlan").Where("company_id = ?", user.ID).First(&subscription).Error
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "No subscription found"})
 			return
@@ -93,7 +93,7 @@ func createCompanySubscription(db *gorm.DB) gin.HandlerFunc {
 
 		// Check if user already has a subscription
 		var existingSubscription database.CompanySubscription
-		err = db.Where("company_id = ?", user.ID).First(&existingSubscription)
+		err = db.Where("company_id = ?", user.ID).First(&existingSubscription).Error
 		if err == nil && existingSubscription.Status != "cancelled" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Company already has an active subscription"})
 			return
@@ -159,7 +159,7 @@ func updateCompanySubscription(db *gorm.DB) gin.HandlerFunc {
 
 		// Get existing subscription
 		var subscription database.CompanySubscription
-		if err := db.Preload("SubscriptionPlan").Where("company_id = ?", user.ID).First(&subscription); err != nil {
+		if err := db.Preload("SubscriptionPlan").Where("company_id = ?", user.ID).First(&subscription).Error; err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "No subscription found"})
 			return
 		}
@@ -216,7 +216,7 @@ func cancelCompanySubscription(db *gorm.DB) gin.HandlerFunc {
 
 		// Get existing subscription
 		var subscription database.CompanySubscription
-		if err := db.Where("company_id = ?", user.ID).First(&subscription); err != nil {
+		if err := db.Where("company_id = ?", user.ID).First(&subscription).Error; err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "No subscription found"})
 			return
 		}
@@ -500,7 +500,7 @@ func getWhiteLabelConfig(db *gorm.DB) gin.HandlerFunc {
 
 		// Get white-label config
 		var config database.WhiteLabelConfig
-		err := db.Where("company_id = ?", user.ID).First(&config)
+		err := db.Where("company_id = ?", user.ID).First(&config).Error
 		if err != nil {
 			// Create default config if not exists
 			config = database.WhiteLabelConfig{
@@ -554,7 +554,7 @@ func updateWhiteLabelConfig(db *gorm.DB) gin.HandlerFunc {
 
 		// Get existing config
 		var config database.WhiteLabelConfig
-		if err := db.Where("company_id = ?", user.ID).First(&config); err != nil {
+		if err := db.Where("company_id = ?", user.ID).First(&config).Error; err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "White-label config not found"})
 			return
 		}
@@ -615,7 +615,7 @@ func calculateUsageStats(db *gorm.DB, companyID uint, startDate, endDate time.Ti
 
 func generateInvoiceNumber(db *gorm.DB) string {
 	var lastInvoice database.BillingInvoice
-	db.Order("id DESC").First(&lastInvoice)
+	db.Order("id DESC").First(&lastInvoice).Error
 	
 	if lastInvoice.ID == 0 {
 		return "INV-2024-001"

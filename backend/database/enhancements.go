@@ -1,9 +1,5 @@
 package database
 
-import (
-	"time"
-)
-
 type Product struct {
 	ID          uint    `gorm:"primaryKey" json:"id"`
 	Name        string  `gorm:"not null" json:"name"`
@@ -58,9 +54,9 @@ type DashboardStats struct {
 	TotalRevenue      float64 `json:"total_revenue"`
 	UnpaidAmount      float64 `json:"unpaid_amount"`
 	ThisMonthRevenue  float64 `json:"this_month_revenue"`
-	TotalInvoices     int     `json:"total_invoices"`
-	PaidInvoices      int     `json:"paid_invoices"`
-	UnpaidInvoices    int     `json:"unpaid_invoices"`
-	OverdueInvoices   int     `json:"overdue_invoices"`
-	DraftInvoices     int     `json:"draft_invoices"`
+	TotalInvoices     int64   `json:"total_invoices"`
+	PaidInvoices      int64   `json:"paid_invoices"`
+	UnpaidInvoices    int64   `json:"unpaid_invoices"`
+	OverdueInvoices   int64   `json:"overdue_invoices"`
+	DraftInvoices     int64   `json:"draft_invoices"`
 }

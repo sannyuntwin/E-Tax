@@ -1,9 +1,12 @@
-package models
+package database
 
 import (
 	"time"
 	"gorm.io/gorm"
 )
+
+// Ensure gorm import is used
+var _ gorm.DB
 
 // User model for authentication
 type User struct {

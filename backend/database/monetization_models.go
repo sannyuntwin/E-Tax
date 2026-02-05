@@ -1,9 +1,12 @@
-package models
+package database
 
 import (
 	"time"
 	"gorm.io/gorm"
 )
+
+// Ensure gorm import is used
+var _ gorm.DB
 
 // Subscription plans
 type SubscriptionPlan struct {

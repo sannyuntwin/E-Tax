@@ -1,9 +1,5 @@
 package database
 
-import (
-	"time"
-)
-
 type PaymentReminder struct {
 	ID            uint      `gorm:"primaryKey" json:"id"`
 	InvoiceID     uint      `json:"invoice_id"`
