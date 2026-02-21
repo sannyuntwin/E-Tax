@@ -751,7 +751,7 @@ function AppContent({ user }: { user: User }) {
                   </button>
                   
                   {/* Back button for non-main views */}
-                  {currentView !== 'dashboard' && currentView !== 'invoices' && (
+                  {currentView !== 'dashboard' && currentView !== 'invoices' && currentView !== 'product-catalog' && currentView !== 'invoice-templates' && currentView !== 'recurring-invoices' && (
                     <button
                       onClick={() => setCurrentView('dashboard')}
                       className="p-2 rounded-md hover:bg-gray-100 mr-4 flex items-center text-gray-600 hover:text-gray-900"
