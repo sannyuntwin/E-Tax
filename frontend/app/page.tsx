@@ -584,7 +584,7 @@ function AppContent({ user }: { user: User }) {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="h2">Invoices</h2>
-              <div className="flex space-x-3">
+              <div className="flex items-center space-x-3">
                 <SearchAndFilter 
                   filters={filters} 
                   onFiltersChange={setFilters}
@@ -592,9 +592,9 @@ function AppContent({ user }: { user: User }) {
                 />
                 <button
                   onClick={() => setShowForm(true)}
-                  className="btn btn-primary"
+                  className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors w-auto min-w-[140px]"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="w-5 h-5 mr-2" />
                   New Invoice
                 </button>
               </div>
