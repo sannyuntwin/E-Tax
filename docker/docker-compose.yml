@@ -1,0 +1,60 @@
+name: etax-docker
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: etax-postgres
+    environment:
+      POSTGRES_DB: etax
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - etax-network
+    restart: unless-stopped
+
+  # Backend API
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: etax-backend
+    env_file:
+      - ../backend/.env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - etax-network
+    restart: unless-stopped
+
+  # Frontend (commented out for separate development)
+  # frontend:
+  #   build:
+  #     context: ../frontend
+  #     dockerfile: Dockerfile
+  #   container_name: etax-frontend
+  #   environment:
+  #     NEXT_PUBLIC_API_URL: http://localhost:8080
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - etax-network
+  #   volumes:
+  #     - ../frontend:/app
+  #     - /app/node_modules
+
+volumes:
+  postgres_data:
+
+networks:
+  etax-network:
+    driver: bridge

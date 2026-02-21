@@ -1,7 +1,8 @@
 -- Create database
-CREATE DATABASE IF NOT EXISTS etax;
+SELECT 'CREATE DATABASE etax'
+WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'etax')\gexec
 
--- Use the database
+-- Use database
 \c etax;
 
 -- Companies table
@@ -108,3 +109,27 @@ INSERT INTO invoice_items (invoice_id, product_name, description, quantity, unit
 -- Items for INV2024005
 (5, 'Laptop Computer', 'Business laptop - Model X', 2, 8000.00, 16000.00),
 (5, 'Monitor', '24-inch LED monitor', 2, 2000.00, 4000.00);
+
+-- Recurring Invoices table
+CREATE TABLE recurring_invoices (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    company_id INTEGER REFERENCES companies(id),
+    customer_id INTEGER REFERENCES customers(id),
+    frequency VARCHAR(20) NOT NULL, -- 'daily', 'weekly', 'monthly', 'quarterly', 'yearly'
+    interval_value INTEGER DEFAULT 1, -- e.g., every 2 weeks
+    start_date DATE NOT NULL,
+    end_date DATE, -- null for ongoing
+    next_invoice_date DATE NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    last_generated DATE,
+    total_generated INTEGER DEFAULT 0,
+    template_data JSON, -- Store invoice template data
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Add recurring invoice reference to regular invoices
+ALTER TABLE invoices ADD COLUMN recurring_invoice_id INTEGER REFERENCES recurring_invoices(id);
+ALTER TABLE invoices ADD COLUMN is_recurring BOOLEAN DEFAULT false;

@@ -7,21 +7,27 @@ import toast from 'react-hot-toast'
 interface User {
   id: number
   email: string
-  name: string
+  username: string
+  first_name: string
+  last_name: string
   role: string
+  is_active: boolean
+  last_login?: string
   created_at: string
   updated_at: string
 }
 
 interface LoginData {
-  email: string
+  username: string
   password: string
 }
 
 interface RegisterData {
+  username: string
   email: string
   password: string
-  name: string
+  first_name: string
+  last_name: string
 }
 
 interface ProfileData {
@@ -31,7 +37,11 @@ interface ProfileData {
   new_password?: string
 }
 
-export default function Authentication() {
+interface AuthenticationProps {
+  onSuccess?: (user: User) => void
+}
+
+export default function Authentication({ onSuccess }: AuthenticationProps = {}) {
   const [isLogin, setIsLogin] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
@@ -40,8 +50,8 @@ export default function Authentication() {
   const [user, setUser] = useState<User | null>(null)
   const [showProfile, setShowProfile] = useState(false)
   
-  const [loginData, setLoginData] = useState<LoginData>({ email: '', password: '' })
-  const [registerData, setRegisterData] = useState<RegisterData>({ email: '', password: '', name: '' })
+  const [loginData, setLoginData] = useState<LoginData>({ username: '', password: '' })
+  const [registerData, setRegisterData] = useState<RegisterData>({ username: '', email: '', password: '', first_name: '', last_name: '' })
   const [profileData, setProfileData] = useState<ProfileData>({ name: '', email: '' })
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
@@ -89,8 +99,11 @@ export default function Authentication() {
         localStorage.setItem('access_token', data.access_token)
         localStorage.setItem('refresh_token', data.refresh_token)
         setUser(data.user)
-        setProfileData({ name: data.user.name, email: data.user.email })
+        setProfileData({ name: `${data.user.first_name} ${data.user.last_name}`, email: data.user.email })
         toast.success('Login successful!')
+        if (onSuccess) {
+          onSuccess(data.user)
+        }
       } else {
         const error = await response.json()
         toast.error(error.error || 'Login failed')
@@ -121,8 +134,11 @@ export default function Authentication() {
         localStorage.setItem('access_token', data.access_token)
         localStorage.setItem('refresh_token', data.refresh_token)
         setUser(data.user)
-        setProfileData({ name: data.user.name, email: data.user.email })
+        setProfileData({ name: `${data.user.first_name} ${data.user.last_name}`, email: data.user.email })
         toast.success('Registration successful!')
+        if (onSuccess) {
+          onSuccess(data.user)
+        }
       } else {
         const error = await response.json()
         toast.error(error.error || 'Registration failed')
@@ -365,7 +381,7 @@ export default function Authentication() {
             <div className="mx-auto h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
               <User className="h-6 w-6 text-blue-600" />
             </div>
-            <h2 className="mt-4 text-2xl font-bold text-gray-900">Welcome, {user.name}!</h2>
+            <h2 className="mt-4 text-2xl font-bold text-gray-900">Welcome, {user.first_name} {user.last_name}!</h2>
             <p className="mt-2 text-sm text-gray-600">Role: {user.role}</p>
             <p className="text-sm text-gray-600">{user.email}</p>
           </div>
@@ -406,58 +422,117 @@ export default function Authentication() {
 
         <form onSubmit={isLogin ? handleLogin : handleRegister} className="mt-6 space-y-4">
           {!isLogin && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Name</label>
-              <input
-                type="text"
-                value={registerData.name}
-                onChange={(e) => setRegisterData({ ...registerData, name: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
-                required
-              />
-            </div>
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Username</label>
+                <input
+                  type="text"
+                  value={registerData.username}
+                  onChange={(e) => setRegisterData({ ...registerData, username: e.target.value })}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">First Name</label>
+                <input
+                  type="text"
+                  value={registerData.first_name}
+                  onChange={(e) => setRegisterData({ ...registerData, first_name: e.target.value })}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Last Name</label>
+                <input
+                  type="text"
+                  value={registerData.last_name}
+                  onChange={(e) => setRegisterData({ ...registerData, last_name: e.target.value })}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border"
+                  required
+                />
+              </div>
+            </>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
+            <label className="block text-sm font-medium text-gray-700">Username</label>
             <div className="relative">
               <input
-                type="email"
-                value={isLogin ? loginData.email : registerData.email}
+                type="text"
+                value={isLogin ? loginData.username : registerData.username}
                 onChange={(e) => isLogin 
-                  ? setLoginData({ ...loginData, email: e.target.value })
-                  : setRegisterData({ ...registerData, email: e.target.value })
+                  ? setLoginData({ ...loginData, username: e.target.value })
+                  : setRegisterData({ ...registerData, username: e.target.value })
                 }
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border pl-10"
                 required
               />
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Password</label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={isLogin ? loginData.password : registerData.password}
-                onChange={(e) => isLogin 
-                  ? setLoginData({ ...loginData, password: e.target.value })
-                  : setRegisterData({ ...registerData, password: e.target.value })
-                }
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border pl-10 pr-10"
-                required
-              />
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
+          {isLogin && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={loginData.password}
+                  onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border pl-10 pr-10"
+                  required
+                />
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
+
+          {!isLogin && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Email</label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    value={registerData.email}
+                    onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border pl-10"
+                    required
+                  />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Password</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={registerData.password}
+                    onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border pl-10 pr-10"
+                    required
+                  />
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
 
           <button
             type="submit"

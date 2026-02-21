@@ -35,8 +35,19 @@ import DarkModeToggle from '@/components/DarkModeToggle'
 import RecurringInvoicesDashboard from '@/components/RecurringInvoicesDashboard'
 import RecurringInvoiceForm from '@/components/RecurringInvoiceForm'
 import RecurringInvoicesList from '@/components/RecurringInvoicesList'
+import AuthWrapper from '@/components/AuthWrapper'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { Invoice, Company, Customer, SearchFilters, Product, InvoiceTemplate, RecurringInvoice } from '@/types'
+import apiClient from '@/utils/api'
+
+interface User {
+  id: number
+  email: string
+  name: string
+  role: string
+  created_at: string
+  updated_at: string
+}
 
 type ViewType = 
   | 'dashboard' 
@@ -88,7 +99,7 @@ const navigationItems: NavigationItem[] = [
   { id: 'system-health', label: 'System Health', icon: Server, category: 'monitoring', adminOnly: true },
 ]
 
-function AppContent() {
+function AppContent({ user }: { user: User }) {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard')
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [companies, setCompanies] = useState<Company[]>([])
@@ -105,20 +116,16 @@ function AppContent() {
   const [filters, setFilters] = useState<SearchFilters>({})
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [userRole, setUserRole] = useState<'user' | 'admin'>('user') // Mock user role
+  const [userRole, setUserRole] = useState<'user' | 'admin'>('user')
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
-  // Mock authentication check - in real app, this would check actual user role
+  // Set user role based on authenticated user
   useEffect(() => {
-    // Simulate checking user role from localStorage or API
-    const storedRole = localStorage.getItem('userRole') as 'user' | 'admin' | null
-    if (storedRole) {
-      setUserRole(storedRole)
+    if (user) {
+      setUserRole(user.role as 'user' | 'admin')
     }
-    // For demo purposes, let's assume admin role
-    setUserRole('admin')
-  }, [])
+  }, [user])
 
   const confirmAction = (message: string): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -298,8 +305,8 @@ function AppContent() {
   const fetchData = async () => {
     try {
       const [companiesRes, customersRes] = await Promise.all([
-        fetch(`${API_BASE}/api/companies`),
-        fetch(`${API_BASE}/api/customers`)
+        apiClient.get('/api/companies'),
+        apiClient.get('/api/customers')
       ])
 
       if (companiesRes.ok && customersRes.ok) {
@@ -344,11 +351,11 @@ function AppContent() {
         if (value) params.append(key, value)
       })
 
-      const url = params.toString() 
-        ? `${API_BASE}/api/invoices/search?${params}`
-        : `${API_BASE}/api/invoices`
+      const endpoint = params.toString() 
+        ? `/api/invoices/search?${params}`
+        : `/api/invoices`
 
-      const response = await fetch(url)
+      const response = await apiClient.get(endpoint)
       if (response.ok) {
         const data = await response.json()
         setInvoices(data)
@@ -400,13 +407,7 @@ function AppContent() {
 
   const handleCreateInvoice = async (invoiceData: Partial<Invoice>) => {
     try {
-      const response = await fetch(`${API_BASE}/api/invoices`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(invoiceData),
-      })
+      const response = await apiClient.post('/api/invoices', invoiceData)
 
       if (response.ok) {
         const newInvoice = await response.json()
@@ -844,5 +845,9 @@ function AppContent() {
 }
 
 export default function Home() {
-  return <AppContent />
+  return (
+    <AuthWrapper>
+      {(user) => <AppContent user={user} />}
+    </AuthWrapper>
+  )
 }

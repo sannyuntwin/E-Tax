@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import apiClient from '@/utils/api';
 
 interface Product {
   id: number;
@@ -40,6 +41,9 @@ const ProductCatalogManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
   const [pageSize] = useState(20);
+  
+  // Ensure products is always an array
+  const productsArray = Array.isArray(products) ? products : [];
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
     description: '',
@@ -77,17 +81,20 @@ const ProductCatalogManagement: React.FC = () => {
         ...(selectedCategory && { category: selectedCategory }),
       });
 
-      const response = await fetch(`/api/products?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await apiClient.get(`/api/products?${params}`);
 
-      if (!response.ok) throw new Error('Failed to fetch products');
-
-      const data = await response.json();
-      setProducts(data || []);
-      setTotalProducts(data.length || 0);
+      if (response.status === 404) {
+        // Products endpoint not implemented - show empty state
+        setProducts([]);
+        setTotalProducts(0);
+        toast.error('Product catalog not available');
+      } else if (!response.ok) {
+        throw new Error('Failed to fetch products');
+      } else {
+        const data = await response.json();
+        setProducts(data || []);
+        setTotalProducts(data.length || 0);
+      }
     } catch (error) {
       toast.error('Error fetching products');
       console.error(error);
@@ -224,28 +231,28 @@ const ProductCatalogManagement: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="text-sm font-medium text-gray-600">Total Products</div>
-          <div className="text-2xl font-bold text-gray-900">{products.length}</div>
+          <div className="text-2xl font-bold text-gray-900">{productsArray.length}</div>
         </div>
         
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="text-sm font-medium text-gray-600">Active</div>
           <div className="text-2xl font-bold text-green-600">
-            {products.filter(p => p.is_active).length}
+            {productsArray.filter(p => p.is_active).length}
           </div>
         </div>
         
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="text-sm font-medium text-gray-600">Categories</div>
           <div className="text-2xl font-bold text-purple-600">
-            {new Set(products.map(p => p.category)).size}
+            {new Set(productsArray.map(p => p.category)).size}
           </div>
         </div>
         
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="text-sm font-medium text-gray-600">Avg Price</div>
           <div className="text-2xl font-bold text-blue-600">
-            {products.length > 0 
-              ? formatCurrency(products.reduce((sum, p) => sum + p.price, 0) / products.length)
+            {productsArray.length > 0 
+              ? formatCurrency(productsArray.reduce((sum, p) => sum + p.price, 0) / productsArray.length)
               : '$0'
             }
           </div>
@@ -341,7 +348,7 @@ const ProductCatalogManagement: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {products.map((product) => (
+                {productsArray.map((product) => (
                   <tr key={product.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
@@ -449,7 +456,7 @@ const ProductCatalogManagement: React.FC = () => {
               </div>
             )}
 
-            {products.length === 0 && !loading && (
+            {productsArray.length === 0 && !loading && (
               <div className="p-8 text-center text-gray-500">
                 <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />

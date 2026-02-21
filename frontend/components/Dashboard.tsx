@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { DollarSign, FileText, AlertCircle, TrendingUp, Users, Clock } from 'lucide-react'
 import { DashboardStats } from '@/types/enhancements'
+import apiClient from '@/utils/api'
 
 interface DashboardProps {
   onCreateInvoice: () => void
@@ -20,13 +21,36 @@ export default function Dashboard({ onCreateInvoice }: DashboardProps) {
 
   const fetchDashboardStats = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/dashboard/stats`)
+      const response = await apiClient.get('/api/dashboard/stats')
       if (response.ok) {
         const data = await response.json()
         setStats(data)
+      } else {
+        // Set default stats when endpoint is not available
+        setStats({
+          total_revenue: 0,
+          this_month_revenue: 0,
+          unpaid_amount: 0,
+          total_invoices: 0,
+          paid_invoices: 0,
+          unpaid_invoices: 0,
+          overdue_invoices: 0,
+          draft_invoices: 0
+        })
       }
     } catch (error) {
       console.error('Error fetching dashboard stats:', error)
+      // Set default stats on error
+      setStats({
+        total_revenue: 0,
+        this_month_revenue: 0,
+        unpaid_amount: 0,
+        total_invoices: 0,
+        paid_invoices: 0,
+        unpaid_invoices: 0,
+        overdue_invoices: 0,
+        draft_invoices: 0
+      })
     } finally {
       setLoading(false)
     }
@@ -71,7 +95,7 @@ export default function Dashboard({ onCreateInvoice }: DashboardProps) {
               <dl>
                 <dt className="text-sm font-medium text-gray-500 truncate">Total Revenue</dt>
                 <dd className="text-lg font-medium text-gray-900">
-                  ฿{stats?.total_revenue.toLocaleString() || '0'}
+                  ฿{(stats?.total_revenue || 0).toLocaleString()}
                 </dd>
               </dl>
             </div>
@@ -88,7 +112,7 @@ export default function Dashboard({ onCreateInvoice }: DashboardProps) {
               <dl>
                 <dt className="text-sm font-medium text-gray-500 truncate">This Month</dt>
                 <dd className="text-lg font-medium text-gray-900">
-                  ฿{stats?.this_month_revenue.toLocaleString() || '0'}
+                  ฿{(stats?.this_month_revenue || 0).toLocaleString()}
                 </dd>
               </dl>
             </div>
@@ -105,7 +129,7 @@ export default function Dashboard({ onCreateInvoice }: DashboardProps) {
               <dl>
                 <dt className="text-sm font-medium text-gray-500 truncate">Unpaid</dt>
                 <dd className="text-lg font-medium text-gray-900">
-                  ฿{stats?.unpaid_amount.toLocaleString() || '0'}
+                  ฿{(stats?.unpaid_amount || 0).toLocaleString()}
                 </dd>
               </dl>
             </div>

@@ -20,6 +20,9 @@ export default function InvoiceList({
   onDownloadPDF, 
   onDownloadXML 
 }: InvoiceListProps) {
+  // Ensure invoices is always an array
+  const invoicesArray = Array.isArray(invoices) ? invoices : []
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB', {
       day: '2-digit',
@@ -49,7 +52,7 @@ export default function InvoiceList({
         <h2 className="text-lg font-medium text-gray-900">Invoices</h2>
       </div>
       
-      {invoices.length === 0 ? (
+      {invoicesArray.length === 0 ? (
         <div className="p-6 text-center text-gray-500">
           <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
           <p>No invoices found. Create your first invoice to get started.</p>
@@ -83,7 +86,7 @@ export default function InvoiceList({
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {invoices.map((invoice) => (
+              {invoicesArray.map((invoice) => (
                 <tr key={invoice.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {invoice.invoice_no}

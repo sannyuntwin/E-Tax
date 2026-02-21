@@ -12,10 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"etax/api"
-	"etax/database"
-	"etax/security"
-	. "etax/database"
+	"etax/internal/api/routes"
+	"etax/internal/database/models"
+	"etax/internal/api/middleware/auth"
 )
 
 // setupTestDB creates an in-memory SQLite database for testing

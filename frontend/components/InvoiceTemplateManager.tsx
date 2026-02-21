@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Save, FileText, Copy, Trash2, Plus, Search, RefreshCw, Edit } from 'lucide-react'
 import { InvoiceTemplate } from '@/types'
 import toast from 'react-hot-toast'
+import apiClient from '@/utils/api'
 
 interface InvoiceTemplateItem {
   id: number;
@@ -51,6 +52,9 @@ export default function InvoiceTemplateManager({
   const [companies, setCompanies] = useState<Company[]>(externalCompanies || [])
   const [customers, setCustomers] = useState<Customer[]>(externalCustomers || [])
   const [loading, setLoading] = useState(true)
+  
+  // Ensure templates is always an array
+  const templatesArray = Array.isArray(templates) ? templates : []
   const [showSaveForm, setShowSaveForm] = useState(false)
   const [templateName, setTemplateName] = useState('')
   const [templateDescription, setTemplateDescription] = useState('')
@@ -109,11 +113,7 @@ export default function InvoiceTemplateManager({
   const fetchTemplates = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`${API_BASE}/api/invoice-templates`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      })
+      const response = await apiClient.get('/api/invoice-templates')
       if (response.ok) {
         const data = await response.json()
         setTemplates(data || [])
@@ -130,11 +130,7 @@ export default function InvoiceTemplateManager({
 
   const fetchCompanies = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/companies`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      })
+      const response = await apiClient.get('/api/companies')
       if (response.ok) {
         const data = await response.json()
         setCompanies(data || [])
@@ -146,11 +142,7 @@ export default function InvoiceTemplateManager({
 
   const fetchCustomers = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/customers`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      })
+      const response = await apiClient.get('/api/customers')
       if (response.ok) {
         const data = await response.json()
         setCustomers(data || [])
@@ -310,7 +302,7 @@ export default function InvoiceTemplateManager({
 
       {/* Templates List */}
       <div className="max-h-96 overflow-y-auto">
-        {templates.length === 0 ? (
+        {templatesArray.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
             <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
             <p>No templates found</p>
@@ -318,7 +310,7 @@ export default function InvoiceTemplateManager({
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
-            {templates.map((template) => (
+            {templatesArray.map((template) => (
               <div key={template.id} className="p-4 hover:bg-gray-50">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">

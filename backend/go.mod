@@ -6,7 +6,6 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/joho/godotenv v1.5.1
-	github.com/jung-kurt/gofpdf v1.16.2
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/crypto v0.14.0
 	gorm.io/driver/postgres v1.5.4
