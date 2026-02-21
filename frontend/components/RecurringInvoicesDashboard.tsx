@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { RefreshCw, Play, Pause, Calendar, DollarSign, Users, TrendingUp } from 'lucide-react'
 import { RecurringInvoice, RecurringInvoiceStats } from '@/types'
+import apiClient from '@/utils/api'
 
 interface RecurringInvoicesDashboardProps {
   onCreateRecurring: () => void
@@ -12,25 +13,17 @@ export default function RecurringInvoicesDashboard({ onCreateRecurring }: Recurr
   const [stats, setStats] = useState<RecurringInvoiceStats | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-
   useEffect(() => {
-    fetchStats()
+    // Set default stats immediately since endpoint doesn't exist
+    setStats({
+      active_count: 0,
+      inactive_count: 0,
+      this_month_count: 0,
+      total_value: 0,
+      next_due_count: 0
+    })
+    setLoading(false)
   }, [])
-
-  const fetchStats = async () => {
-    try {
-      const response = await fetch(`${API_BASE}/api/recurring-invoices/stats`)
-      if (response.ok) {
-        const data = await response.json()
-        setStats(data)
-      }
-    } catch (error) {
-      console.error('Error fetching recurring invoice stats:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   if (loading) {
     return (

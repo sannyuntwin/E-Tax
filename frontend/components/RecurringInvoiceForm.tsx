@@ -32,11 +32,14 @@ export default function RecurringInvoiceForm({
   onSubmit, 
   onCancel 
 }: RecurringInvoiceFormProps) {
+  // Ensure arrays are always arrays
+  const companiesArray = Array.isArray(companies) ? companies : []
+  const customersArray = Array.isArray(customers) ? customers : []
   const [formData, setFormData] = useState<RecurringInvoiceForm>({
     name: recurringInvoice?.name || '',
     description: recurringInvoice?.description || '',
-    company_id: recurringInvoice?.company_id || companies[0]?.id || 0,
-    customer_id: recurringInvoice?.customer_id || customers[0]?.id || 0,
+    company_id: recurringInvoice?.company_id || companiesArray[0]?.id || 0,
+    customer_id: recurringInvoice?.customer_id || customersArray[0]?.id || 0,
     frequency: recurringInvoice?.frequency || 'monthly',
     interval_value: recurringInvoice?.interval_value || 1,
     start_date: recurringInvoice?.start_date || new Date().toISOString().split('T')[0],
@@ -174,7 +177,7 @@ export default function RecurringInvoiceForm({
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-black dark:text-white"
                 required
               >
-                {companies.map((company) => (
+                {companiesArray.map((company) => (
                   <option key={company.id} value={company.id}>
                     {company.company_name}
                   </option>
@@ -192,7 +195,7 @@ export default function RecurringInvoiceForm({
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-black dark:text-white"
                 required
               >
-                {customers.map((customer) => (
+                {customersArray.map((customer) => (
                   <option key={customer.id} value={customer.id}>
                     {customer.name}
                   </option>

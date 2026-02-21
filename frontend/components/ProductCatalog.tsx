@@ -57,6 +57,9 @@ export default function ProductCatalog() {
     unit: 'pcs'
   })
 
+  // Ensure products is always an array
+  const productsArray = Array.isArray(products) ? products : []
+
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
   const token = localStorage.getItem('access_token')
 
@@ -73,9 +76,9 @@ export default function ProductCatalog() {
       })
       if (response.ok) {
         const data = await response.json()
-        setProducts(data)
+        setProducts(Array.isArray(data) ? data : [])
         
-        const cats = Array.from(new Set(data.map((p: Product) => p.category).filter(Boolean))) as string[]
+        const cats = Array.from(new Set((Array.isArray(data) ? data : []).map((p: Product) => p.category).filter(Boolean))) as string[]
         setCategories(cats)
       }
     } catch (error) {
@@ -110,10 +113,10 @@ export default function ProductCatalog() {
         const updatedProduct = await response.json()
         
         if (editingProduct) {
-          setProducts(products.map(prod => prod.id === updatedProduct.id ? updatedProduct : prod))
+          setProducts(productsArray.map(prod => prod.id === updatedProduct.id ? updatedProduct : prod))
           toast.success('Product updated successfully!')
         } else {
-          setProducts([...products, updatedProduct])
+          setProducts([...productsArray, updatedProduct])
           toast.success('Product created successfully!')
         }
         
@@ -160,7 +163,7 @@ export default function ProductCatalog() {
       })
 
       if (response.ok) {
-        setProducts(products.filter(prod => prod.id !== id))
+        setProducts(productsArray.filter(prod => prod.id !== id))
         toast.success('Product deleted successfully!')
       } else {
         toast.error('Failed to delete product')
@@ -189,7 +192,7 @@ export default function ProductCatalog() {
     setShowForm(false)
   }
 
-  const filteredProducts = products.filter(product => {
+  const filteredProducts = productsArray.filter(product => {
     const matchesCategory = !selectedCategory || product.category === selectedCategory
     const matchesSearch = !search || 
       product.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -198,7 +201,7 @@ export default function ProductCatalog() {
     return matchesCategory && matchesSearch
   })
 
-  if (loading && products.length === 0) {
+  if (loading && productsArray.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>

@@ -5,7 +5,7 @@ import {
   Plus, FileText, Download, Eye, Trash2, Edit, BarChart3, HelpCircle, RefreshCw, 
   Building2, Users, Package, CreditCard, Bell, Settings, Shield, Activity,
   Globe, ShoppingCart, Database, TrendingUp, Lock, UserCheck, Server,
-  ChevronDown, Menu, X
+  ChevronDown, Menu, X, ArrowLeft
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -42,9 +42,13 @@ import apiClient from '@/utils/api'
 
 interface User {
   id: number
+  username: string
+  first_name: string
+  last_name: string
   email: string
-  name: string
   role: string
+  is_active: boolean
+  last_login?: string
   created_at: string
   updated_at: string
 }
@@ -62,6 +66,7 @@ type ViewType =
   | 'marketplace-integrations'
   | 'product-catalog'
   | 'invoice-templates'
+  | 'recurring-invoices'
   | 'system-health'
   | 'api-usage'
 
@@ -81,6 +86,7 @@ const navigationItems: NavigationItem[] = [
   // Product & Template Management
   { id: 'product-catalog', label: 'Product Catalog', icon: Package, category: 'products' },
   { id: 'invoice-templates', label: 'Invoice Templates', icon: FileText, category: 'products' },
+  { id: 'recurring-invoices', label: 'Recurring Invoices', icon: RefreshCw, category: 'products' },
   
   // Admin Tools
   { id: 'admin-users', label: 'User Management', icon: Users, category: 'admin', adminOnly: true },
@@ -126,6 +132,21 @@ function AppContent({ user }: { user: User }) {
       setUserRole(user.role as 'user' | 'admin')
     }
   }, [user])
+
+  // Keyboard shortcuts for back navigation
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && (showProductCatalog || showTemplateManager || showRecurringDashboard || showRecurringForm)) {
+        setShowProductCatalog(false)
+        setShowTemplateManager(false)
+        setShowRecurringDashboard(false)
+        setShowRecurringForm(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [showProductCatalog, showTemplateManager, showRecurringDashboard, showRecurringForm])
 
   const confirmAction = (message: string): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -176,34 +197,40 @@ function AppContent({ user }: { user: User }) {
 
   const fetchRecurringInvoices = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/recurring-invoices`)
-      if (response.ok) {
+      const response = await apiClient.get('/api/recurring-invoices')
+      
+      if (response.status === 404) {
+        // Endpoint not implemented - set empty array
+        setRecurringInvoices([])
+      } else if (response.ok) {
         const data = await response.json()
         setRecurringInvoices(data)
       }
     } catch (error) {
       console.error('Error fetching recurring invoices:', error)
+      setRecurringInvoices([])
     }
   }
 
   const handleCreateRecurringInvoice = async (recurringData: any) => {
     try {
-      const response = await fetch(`${API_BASE}/api/recurring-invoices`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(recurringData),
-      })
-
-      if (response.ok) {
+      const response = await apiClient.post('/api/recurring-invoices', JSON.stringify(recurringData))
+      
+      if (response.status === 404) {
+        toast.error('Recurring invoices feature not available')
+      } else if (response.ok) {
         const newRecurring = await response.json()
+        setRecurringInvoices([...recurringInvoices, newRecurring])
         setShowRecurringForm(false)
-        setShowRecurringDashboard(true)
-        fetchRecurringInvoices()
+        setEditingRecurring(undefined)
+        toast.success('Recurring invoice created successfully')
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to create recurring invoice')
       }
     } catch (error) {
       console.error('Error creating recurring invoice:', error)
+      toast.error('Failed to create recurring invoice')
     }
   }
 
@@ -211,23 +238,23 @@ function AppContent({ user }: { user: User }) {
     if (!editingRecurring) return
 
     try {
-      const response = await fetch(`${API_BASE}/api/recurring-invoices/${editingRecurring.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(recurringData),
-      })
-
-      if (response.ok) {
+      const response = await apiClient.put(`/api/recurring-invoices/${editingRecurring.id}`, JSON.stringify(recurringData))
+      
+      if (response.status === 404) {
+        toast.error('Recurring invoices feature not available')
+      } else if (response.ok) {
         const updatedRecurring = await response.json()
         setRecurringInvoices(recurringInvoices.map(inv => inv.id === updatedRecurring.id ? updatedRecurring : inv))
         setEditingRecurring(undefined)
         setShowRecurringForm(false)
         fetchRecurringInvoices()
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to update recurring invoice')
       }
     } catch (error) {
       console.error('Error updating recurring invoice:', error)
+      toast.error('Failed to update recurring invoice')
     }
   }
 
@@ -608,10 +635,13 @@ function AppContent({ user }: { user: User }) {
         return <MarketplaceIntegrationManager />
       
       case 'product-catalog':
-        return <ProductCatalogManagement />
+        return <ProductCatalog />
       
       case 'invoice-templates':
         return <InvoiceTemplateManager />
+      
+      case 'recurring-invoices':
+        return <RecurringInvoicesDashboard onCreateRecurring={() => setShowRecurringForm(true)} />
       
       case 'system-health':
         return <SystemHealthMonitor />
@@ -675,8 +705,19 @@ function AppContent({ user }: { user: User }) {
                       <button
                         key={item.id}
                         onClick={() => {
-                          setCurrentView(item.id)
-                          setSidebarOpen(false)
+                          if (item.id === 'product-catalog') {
+                            setCurrentView('product-catalog')
+                            setSidebarOpen(false)
+                          } else if (item.id === 'invoice-templates') {
+                            setCurrentView('invoice-templates')
+                            setSidebarOpen(false)
+                          } else if (item.id === 'recurring-invoices') {
+                            setCurrentView('recurring-invoices')
+                            setSidebarOpen(false)
+                          } else {
+                            setCurrentView(item.id)
+                            setSidebarOpen(false)
+                          }
                         }}
                         className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                           currentView === item.id
@@ -708,36 +749,25 @@ function AppContent({ user }: { user: User }) {
                   >
                     <Menu className="h-5 w-5" />
                   </button>
+                  
+                  {/* Back button for non-main views */}
+                  {currentView !== 'dashboard' && currentView !== 'invoices' && (
+                    <button
+                      onClick={() => setCurrentView('dashboard')}
+                      className="p-2 rounded-md hover:bg-gray-100 mr-4 flex items-center text-gray-600 hover:text-gray-900"
+                      title="Back to Dashboard"
+                    >
+                      <ArrowLeft className="h-5 w-5 mr-1" />
+                      Back
+                    </button>
+                  )}
+                  
                   <h2 className="text-xl font-semibold text-gray-900">
                     {navigationItems.find(item => item.id === currentView)?.label || 'Dashboard'}
                   </h2>
                 </div>
                 
                 <div className="flex items-center space-x-4">
-                  <button
-                    onClick={() => setShowProductCatalog(true)}
-                    className="btn btn-sm btn-outline"
-                    title="Product Catalog"
-                  >
-                    <Package className="h-4 w-4" />
-                  </button>
-                  
-                  <button
-                    onClick={() => setShowTemplateManager(true)}
-                    className="btn btn-sm btn-outline"
-                    title="Template Manager"
-                  >
-                    <FileText className="h-4 w-4" />
-                  </button>
-
-                  <button
-                    onClick={() => setShowRecurringDashboard(true)}
-                    className="btn btn-sm btn-ghost"
-                    title="Recurring Invoices"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                  </button>
-
                   <DarkModeToggle />
                   <KeyboardShortcuts
                     onCreateInvoice={() => {
@@ -799,31 +829,6 @@ function AppContent({ user }: { user: User }) {
               setEditingInvoice(selectedInvoice)
               setSelectedInvoice(undefined)
             }}
-          />
-        )}
-
-        {showProductCatalog && (
-          <ProductCatalog />
-        )}
-
-        {showTemplateManager && (
-          <InvoiceTemplateManager
-            onSelectTemplate={(template) => {
-              console.log('Selected template:', template)
-              setShowTemplateManager(false)
-              setShowForm(true)
-            }}
-            onSaveAsTemplate={(invoiceData, templateName) => {
-              console.log('Saving as template:', templateName, invoiceData)
-            }}
-            companies={companies}
-            customers={customers}
-          />
-        )}
-
-        {showRecurringDashboard && (
-          <RecurringInvoicesDashboard
-            onCreateRecurring={() => setShowRecurringForm(true)}
           />
         )}
 
