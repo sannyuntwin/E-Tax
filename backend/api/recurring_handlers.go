@@ -4,11 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"backend/database"
+	"etax/database"
 	"gorm.io/gorm"
 )
 
@@ -144,16 +143,22 @@ func getRecurringInvoiceStats(db *gorm.DB) gin.HandlerFunc {
 		var stats database.RecurringInvoiceStats
 		
 		// Count active and inactive
-		db.Model(&database.RecurringInvoice{}).Where("is_active = ?", true).Count(&stats.ActiveCount)
-		db.Model(&database.RecurringInvoice{}).Where("is_active = ?", false).Count(&stats.InactiveCount)
+		var activeCount, inactiveCount, thisMonthCount, nextDueCount int64
+		db.Model(&database.RecurringInvoice{}).Where("is_active = ?", true).Count(&activeCount)
+		db.Model(&database.RecurringInvoice{}).Where("is_active = ?", false).Count(&inactiveCount)
 		
 		// Count due this month
 		currentMonth := time.Now().Format("2006-01")
-		db.Model(&database.RecurringInvoice{}).Where("next_invoice_date LIKE ? AND is_active = ?", currentMonth+"%", true).Count(&stats.ThisMonthCount)
+		db.Model(&database.RecurringInvoice{}).Where("next_invoice_date LIKE ? AND is_active = ?", currentMonth+"%", true).Count(&thisMonthCount)
 		
 		// Count due in next 7 days
 		nextWeek := time.Now().AddDate(0, 0, 7).Format("2006-01-02")
-		db.Model(&database.RecurringInvoice{}).Where("next_invoice_date <= ? AND is_active = ?", nextWeek, true).Count(&stats.NextDueCount)
+		db.Model(&database.RecurringInvoice{}).Where("next_invoice_date <= ? AND is_active = ?", nextWeek, true).Count(&nextDueCount)
+		
+		stats.ActiveCount = int(activeCount)
+		stats.InactiveCount = int(inactiveCount)
+		stats.ThisMonthCount = int(thisMonthCount)
+		stats.NextDueCount = int(nextDueCount)
 		
 		// Calculate total monthly value
 		var totalValue float64

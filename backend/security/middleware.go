@@ -253,14 +253,14 @@ func EnhancedRateLimiter(requestsPerMinute int, burstSize int) gin.HandlerFunc {
 }
 
 // File upload security middleware
-func SecureFileUpload() gin.HandlerFunc {
+func SecureFileUpload(maxFileSize int64) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.Request.Method == "POST" || c.Request.Method == "PUT" {
 			// Check for file uploads
 			contentType := c.GetHeader("Content-Type")
 			if strings.Contains(contentType, "multipart/form-data") {
-				// Validate file size (10MB limit)
-				if c.Request.ContentLength > 10*1024*1024 {
+				// Validate file size
+				if c.Request.ContentLength > maxFileSize {
 					c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "File too large"})
 					c.Abort()
 					return
@@ -306,16 +306,18 @@ func RequestTimeout(timeout time.Duration) gin.HandlerFunc {
 }
 
 // CORS middleware (enhanced)
-func EnhancedCORS() gin.HandlerFunc {
+func EnhancedCORS(allowedOrigins []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
 		
-		// In production, validate origin against whitelist
-		allowedOrigins := []string{
-			"http://localhost:3000",
-			"https://localhost:3000",
-			"http://localhost:8080",
-			"https://localhost:8080",
+		// Use provided allowed origins or default localhost
+		if len(allowedOrigins) == 0 {
+			allowedOrigins = []string{
+				"http://localhost:3000",
+				"https://localhost:3000",
+				"http://localhost:8080",
+				"https://localhost:8080",
+			}
 		}
 		
 		isAllowed := false

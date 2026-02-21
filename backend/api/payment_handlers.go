@@ -3,11 +3,10 @@ package api
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"backend/database"
+	"etax/database"
 	"gorm.io/gorm"
 )
 
@@ -255,9 +254,14 @@ func getPaymentStats(db *gorm.DB) gin.HandlerFunc {
 		db.Model(&database.Payment{}).Where("payment_date LIKE ?", currentMonth+"%").Select("COALESCE(SUM(amount), 0)").Scan(&stats.ThisMonthPaid)
 		
 		// Count invoice statuses
-		db.Model(&database.Invoice{}).Where("payment_status = 'paid'").Count(&stats.PaidInvoices)
-		db.Model(&database.Invoice{}).Where("payment_status IN ('unpaid', 'partial')").Count(&stats.UnpaidInvoices)
-		db.Model(&database.Invoice{}).Where("payment_status IN ('unpaid', 'partial') AND due_date < ?", time.Now().Format("2006-01-02")).Count(&stats.OverdueInvoices)
+		var paidCount, unpaidCount, overdueCount int64
+		db.Model(&database.Invoice{}).Where("payment_status = 'paid'").Count(&paidCount)
+		db.Model(&database.Invoice{}).Where("payment_status IN ('unpaid', 'partial')").Count(&unpaidCount)
+		db.Model(&database.Invoice{}).Where("payment_status IN ('unpaid', 'partial') AND due_date < ?", time.Now().Format("2006-01-02")).Count(&overdueCount)
+		
+		stats.PaidInvoices = int(paidCount)
+		stats.UnpaidInvoices = int(unpaidCount)
+		stats.OverdueInvoices = int(overdueCount)
 
 		c.JSON(http.StatusOK, stats)
 	}

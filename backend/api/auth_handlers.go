@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"backend/database"
-	"backend/security"
+	"etax/database"
+	"etax/security"
 	"gorm.io/gorm"
 )
 

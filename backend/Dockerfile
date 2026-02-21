@@ -26,10 +26,13 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 
 # Create app directory
-WORKDIR /root/
+WORKDIR /app
 
 # Copy the binary from builder stage
 COPY --from=builder /app/main .
+
+# Copy .env file
+COPY --from=builder /app/.env .
 
 # Expose port
 EXPOSE 8080

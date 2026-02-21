@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"backend/database"
-	"backend/security"
+	"etax/database"
+	"etax/security"
 	"gorm.io/gorm"
 )
 
@@ -17,8 +17,8 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, securityService *security.SecurityS
 	r.POST("/api/auth/logout", logout(securityService, db))
 
 	// Public routes (no authentication required)
-	r.GET("/health", healthCheck(db))
-	r.GET("/api/health", healthCheck(db))
+	r.GET("/health", HealthCheck(db))
+	r.GET("/api/health", HealthCheck(db))
 
 	// Protected routes (authentication required)
 	authGroup := r.Group("/api")
@@ -33,14 +33,28 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, securityService *security.SecurityS
 		adminGroup := authGroup.Group("/admin")
 		adminGroup.Use(security.RequireRole("admin"))
 		{
-			// TODO: Implement admin functions
-			// adminGroup.GET("/users", getUsers(db))
-			// adminGroup.POST("/users", createUser(db))
-			// adminGroup.PUT("/users/:id", updateUser(db))
-			// adminGroup.DELETE("/users/:id", deleteUser(db))
-			// adminGroup.GET("/audit-logs", getAuditLogs(db))
-			// adminGroup.GET("/security-settings", getSecuritySettings(db))
-			// adminGroup.PUT("/security-settings", updateSecuritySettings(db))
+			// User management
+			adminGroup.GET("/users", getUsers(db))
+			adminGroup.POST("/users", createUser(db))
+			adminGroup.PUT("/users/:id", updateUser(db))
+			adminGroup.DELETE("/users/:id", deleteUser(db))
+			adminGroup.GET("/users/:id", getUser(db))
+			
+			// Audit and security
+			adminGroup.GET("/audit-logs", getAuditLogs(db))
+			adminGroup.GET("/security-settings", getSecuritySettings(db))
+			adminGroup.PUT("/security-settings", updateSecuritySettings(db))
+			adminGroup.GET("/login-attempts", getLoginAttempts(db))
+			
+			// System management
+			adminGroup.GET("/system/stats", getSystemStats(db))
+			adminGroup.POST("/system/backup", createBackup(db))
+			adminGroup.GET("/system/health", getSystemHealth(db))
+			
+			// Company management
+			adminGroup.GET("/companies/all", getAllCompanies(db))
+			adminGroup.PUT("/companies/:id/approve", approveCompany(db))
+			adminGroup.PUT("/companies/:id/suspend", suspendCompany(db))
 		}
 
 		// Monetization routes
@@ -142,8 +156,7 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, securityService *security.SecurityS
 		authGroup.PUT("/invoice-items/:id", updateInvoiceItem(db))
 		authGroup.DELETE("/invoice-items/:id", deleteInvoiceItem(db))
 
-		// Performance monitoring
-		authGroup.GET("/performance/metrics", getPerformanceMetrics(db))
+		// Performance monitoring is handled by middleware
 	}
 }
 

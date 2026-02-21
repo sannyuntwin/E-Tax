@@ -1,17 +1,25 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    './pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './pages/**/*.{js,ts,jsx,tsx,mdx}',
   ],
-  darkMode: 'class',
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+        mono: ['JetBrains Mono', '"Courier New"', 'Courier', 'monospace'],
+      },
+      fontWeight: {
+        light: '400',
+        medium: '500',
+        semibold: '600',
+        bold: '700',
+      },
       colors: {
         primary: {
           50: '#eff6ff',
-          500: '#3b82f6',
           600: '#2563eb',
           700: '#1d4ed8',
         },
@@ -19,7 +27,4 @@ module.exports = {
     },
   },
   plugins: [],
-  corePlugins: {
-    preflight: false, // Disable Tailwind's reset to avoid conflicts
-  },
 }

@@ -1,28 +1,71 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Save, FileText, Copy, Trash2, Plus } from 'lucide-react'
+import { Save, FileText, Copy, Trash2, Plus, Search, RefreshCw, Edit } from 'lucide-react'
 import { InvoiceTemplate } from '@/types'
 import toast from 'react-hot-toast'
 
+interface InvoiceTemplateItem {
+  id: number;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+  tax_rate: number;
+}
+
+interface TemplateFormData {
+  name: string;
+  description: string;
+  company_id: number;
+  customer_id: number;
+  notes: string;
+  items: InvoiceTemplateItem[];
+  is_default: boolean;
+}
+
+interface Company {
+  id: number;
+  company_name: string;
+}
+
+interface Customer {
+  id: number;
+  name: string;
+}
+
 interface InvoiceTemplateManagerProps {
-  onSelectTemplate: (template: InvoiceTemplate) => void
-  onSaveAsTemplate: (invoiceData: any, templateName: string) => void
-  companies: any[]
-  customers: any[]
+  onSelectTemplate?: (template: InvoiceTemplate) => void
+  onSaveAsTemplate?: (invoiceData: any, templateName: string) => void
+  companies?: Company[]
+  customers?: Customer[]
 }
 
 export default function InvoiceTemplateManager({ 
   onSelectTemplate, 
   onSaveAsTemplate, 
-  companies, 
-  customers 
+  companies: externalCompanies, 
+  customers: externalCustomers 
 }: InvoiceTemplateManagerProps) {
   const [templates, setTemplates] = useState<InvoiceTemplate[]>([])
+  const [companies, setCompanies] = useState<Company[]>(externalCompanies || [])
+  const [customers, setCustomers] = useState<Customer[]>(externalCustomers || [])
   const [loading, setLoading] = useState(true)
   const [showSaveForm, setShowSaveForm] = useState(false)
   const [templateName, setTemplateName] = useState('')
   const [templateDescription, setTemplateDescription] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingTemplate, setEditingTemplate] = useState<InvoiceTemplate | null>(null)
+  const [formData, setFormData] = useState<TemplateFormData>({
+    name: '',
+    description: '',
+    company_id: 0,
+    customer_id: 0,
+    notes: '',
+    items: [],
+    is_default: false,
+  })
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
@@ -59,24 +102,66 @@ export default function InvoiceTemplateManager({
 
   useEffect(() => {
     fetchTemplates()
+    if (!externalCompanies) fetchCompanies()
+    if (!externalCustomers) fetchCustomers()
   }, [])
 
   const fetchTemplates = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/invoice-templates`)
+      setLoading(true)
+      const response = await fetch(`${API_BASE}/api/invoice-templates`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      })
       if (response.ok) {
         const data = await response.json()
-        setTemplates(data)
+        setTemplates(data || [])
+      } else {
+        throw new Error('Failed to fetch templates')
       }
     } catch (error) {
       console.error('Error fetching templates:', error)
+      toast.error('Error fetching invoice templates')
     } finally {
       setLoading(false)
     }
   }
 
+  const fetchCompanies = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/companies`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setCompanies(data || [])
+      }
+    } catch (error) {
+      console.error('Error fetching companies:', error)
+    }
+  }
+
+  const fetchCustomers = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/customers`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setCustomers(data || [])
+      }
+    } catch (error) {
+      console.error('Error fetching customers:', error)
+    }
+  }
+
   const handleSaveTemplate = () => {
-    if (!templateName.trim()) return
+    if (!templateName.trim() || !onSaveAsTemplate) return
 
     // Get current invoice data from the form (this would be passed from parent)
     const currentInvoiceData = {
@@ -254,7 +339,7 @@ export default function InvoiceTemplateManager({
                   </div>
                   <div className="flex space-x-2 ml-4">
                     <button
-                      onClick={() => onSelectTemplate(template)}
+                      onClick={() => onSelectTemplate?.(template)}
                       className="p-2 text-blue-600 hover:text-blue-800"
                       title="Use Template"
                     >

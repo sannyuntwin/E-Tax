@@ -2,7 +2,7 @@ package database
 
 import (
 	"fmt"
-	"backend/config"
+	"etax/config"
 	"time"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -12,18 +12,25 @@ import (
 var DB *gorm.DB
 
 func InitDB() (*gorm.DB, error) {
-	cfg := config.GetConfig()
+	cfg, err := config.Load()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load configuration: %w", err)
+	}
 	
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Bangkok",
-		cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBPort)
+	dsn := cfg.DatabaseURL()
 
 	var db *gorm.DB
-	var err error
+	
+	// Set logger based on environment
+	logMode := logger.Silent
+	if cfg.IsDevelopment() {
+		logMode = logger.Info
+	}
 	
 	// Retry connection for up to 30 seconds
 	for i := 0; i < 30; i++ {
 		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
-			Logger: logger.Default.LogMode(logger.Info),
+			Logger: logger.Default.LogMode(logMode),
 		})
 		if err == nil {
 			break
@@ -36,6 +43,17 @@ func InitDB() (*gorm.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database after 30 attempts: %w", err)
 	}
+
+	// Get underlying SQL DB to configure connection pool
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
+	}
+	
+	// Configure connection pool
+	sqlDB.SetMaxOpenConns(cfg.Database.MaxOpenConns)
+	sqlDB.SetMaxIdleConns(cfg.Database.MaxIdleConns)
+	sqlDB.SetConnMaxLifetime(cfg.Database.MaxLifetime)
 
 	// Auto migrate the schema
 	err = db.AutoMigrate(&Company{}, &Customer{}, &Invoice{}, &InvoiceItem{}, &Product{}, &InvoiceTemplate{}, &RecurringInvoice{}, &PaymentReminder{}, &Payment{}, &User{}, &Session{}, &AuditLog{}, &APIKey{}, &SecuritySettings{}, &LoginAttempt{}, &SubscriptionPlan{}, &CompanySubscription{}, &APIUsage{}, &BillingInvoice{}, &UsageQuota{}, &WhiteLabelConfig{}, &PaymentMethod{}, &MarketplaceIntegration{}, &POSVendorConfig{})

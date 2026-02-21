@@ -3,10 +3,9 @@ package api
 import (
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"backend/database"
+	"etax/database"
 	"gorm.io/gorm"
 )
 
@@ -101,7 +100,7 @@ func searchInvoicesOptimized(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 
-		// Use full-text search for better performance
+		// Use simple LIKE search for now instead of full-text search
 		var invoices []database.Invoice
 		query := db.Model(&database.Invoice{}).
 			Preload("Company").
@@ -109,8 +108,8 @@ func searchInvoicesOptimized(db *gorm.DB) gin.HandlerFunc {
 			Preload("Items").
 			Preload("Payments").
 			Preload("Reminders").
-			Where("search_vector @@ plainto_tsquery(?)", search).
-			Order("ts_rank(search_vector, plainto_tsquery(?)) DESC", search)
+			Where("invoice_no ILIKE ? OR company_name ILIKE ?", "%"+search+"%", "%"+search+"%").
+			Order("issue_date DESC")
 
 		// Apply additional filters
 		applyInvoiceFilters(query, c)
@@ -118,7 +117,7 @@ func searchInvoicesOptimized(db *gorm.DB) gin.HandlerFunc {
 		// Get total count
 		var total int64
 		countQuery := query.Session(&gorm.Session{})
-		countQuery.Where("search_vector @@ plainto_tsquery(?)", search)
+		countQuery.Where("invoice_no ILIKE ? OR company_name ILIKE ?", "%"+search+"%", "%"+search+"%")
 		applyInvoiceFilters(countQuery, c)
 		countQuery.Count(&total)
 
@@ -149,21 +148,8 @@ func searchInvoicesOptimized(db *gorm.DB) gin.HandlerFunc {
 // Cached dashboard stats
 func getDashboardStatsCached(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Use a simple cache key based on time
-		cacheKey := "dashboard_stats_" + time.Now().Format("2006-01-02-15")
-		
-		// Try to get from cache (Redis would be ideal, but using memory cache for simplicity)
-		if cached := getFromCache(cacheKey); cached != nil {
-			c.JSON(http.StatusOK, cached)
-			return
-		}
-
-		// Generate stats
+		// Generate stats without cache for now to avoid conflicts
 		stats := generateDashboardStats(db)
-		
-		// Cache for 5 minutes
-		setCache(cacheKey, stats, 5*time.Minute)
-		
 		c.JSON(http.StatusOK, stats)
 	}
 }
@@ -180,8 +166,8 @@ func searchCustomersOptimized(db *gorm.DB) gin.HandlerFunc {
 
 		var customers []database.Customer
 		query := db.Model(&database.Customer{}).
-			Where("search_vector @@ plainto_tsquery(?)", search).
-			Order("ts_rank(search_vector, plainto_tsquery(?)) DESC", search)
+			Where("name ILIKE ? OR email ILIKE ?", "%"+search+"%", "%"+search+"%").
+			Order("name ASC")
 
 		if err := query.Find(&customers).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -192,30 +178,15 @@ func searchCustomersOptimized(db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
-// Performance metrics endpoint
-func getPerformanceMetrics(db *gorm.DB) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		metrics := getPerformanceMetrics()
-		
-		// Get database stats if available
-		var dbStats interface{}
-		if sqlDB, err := db.DB(); err == nil {
-			stats := sqlDB.Stats()
-			dbStats = gin.H{
-				"open_connections": stats.OpenConnections,
-				"in_use": stats.InUse,
-				"idle": stats.Idle,
-				"max_open_conns": stats.MaxOpenConns,
-			}
-		}
-		
-		response := gin.H{
-			"performance": metrics,
-			"database": dbStats,
-			"timestamp": time.Now().Format(time.RFC3339),
-		}
-		
-		c.JSON(http.StatusOK, response)
+// Helper function to get metrics from middleware
+func getPerformanceMetricsFromMiddleware() interface{} {
+	// This would interface with the middleware metrics
+	// For now, return placeholder data
+	return map[string]interface{}{
+		"request_count": 0,
+		"average_response_time": 0.0,
+		"error_rate": 0.0,
+		"active_connections": 0,
 	}
 }
 
@@ -312,33 +283,6 @@ func applySorting(query *gorm.DB, sort, order, defaultSort string) *gorm.DB {
 	}
 	
 	return query.Order(sort + " " + order)
-}
-
-// Simple in-memory cache (in production, use Redis)
-var (
-	cache = make(map[string]cacheEntry)
-)
-
-type cacheEntry struct {
-	Data      interface{}
-	ExpiresAt time.Time
-}
-
-func getFromCache(key string) interface{} {
-	if entry, exists := cache[key]; exists {
-		if time.Now().Before(entry.ExpiresAt) {
-			return entry.Data
-		}
-		delete(cache, key)
-	}
-	return nil
-}
-
-func setCache(key string, data interface{}, ttl time.Duration) {
-	cache[key] = cacheEntry{
-		Data:      data,
-		ExpiresAt: time.Now().Add(ttl),
-	}
 }
 
 func generateDashboardStats(db *gorm.DB) interface{} {

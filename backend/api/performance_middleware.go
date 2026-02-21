@@ -33,7 +33,7 @@ var (
 )
 
 // Performance monitoring middleware
-func performanceMiddleware() gin.HandlerFunc {
+func PerformanceMiddleware() gin.HandlerFunc {
 	return gin.HandlerFunc(func(c *gin.Context) {
 		startTime := time.Now()
 		
@@ -74,8 +74,8 @@ func performanceMiddleware() gin.HandlerFunc {
 		
 		// Get memory usage (approximate)
 		var m runtime.MemStats
-		m.ReadMemStats(&m)
-		metrics.MemoryUsage = m.Alloc / 1024 / 1024 // Convert to MB
+		runtime.ReadMemStats(&m)
+		metrics.MemoryUsage = int64(m.Alloc / 1024 / 1024) // Convert to MB
 		
 		// Add performance headers
 		c.Header("X-Response-Time", requestTime.String())
@@ -123,7 +123,7 @@ func rateLimiterMiddleware(requestsPerMinute int) gin.HandlerFunc {
 }
 
 // Response compression middleware
-func compressionMiddleware() gin.HandlerFunc {
+func CompressionMiddleware() gin.HandlerFunc {
 	return gin.HandlerFunc(func(c *gin.Context) {
 		// Check if client accepts compression
 		acceptEncoding := c.GetHeader("Accept-Encoding")
@@ -216,7 +216,7 @@ func resetPerformanceMetrics() {
 }
 
 // Health check endpoint
-func healthCheck(db *gorm.DB) gin.HandlerFunc {
+func HealthCheck(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Check database connection
 		sqlDB, err := db.DB()
@@ -248,7 +248,7 @@ func healthCheck(db *gorm.DB) gin.HandlerFunc {
 				"open_connections": stats.OpenConnections,
 				"in_use": stats.InUse,
 				"idle": stats.Idle,
-				"max_open_conns": stats.MaxOpenConns,
+				"max_open_conns": stats.MaxOpenConnections,
 			},
 			"performance": getPerformanceMetrics(),
 			"timestamp": time.Now().Format(time.RFC3339),

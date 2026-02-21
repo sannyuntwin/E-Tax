@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jung-kurt/gofpdf"
-	"backend/database"
+	"etax/database"
 	"gorm.io/gorm"
 )
 

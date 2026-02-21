@@ -1,8 +1,28 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, FileText, Download, Eye, Trash2, Edit, BarChart3, HelpCircle, RefreshCw } from 'lucide-react'
+import { 
+  Plus, FileText, Download, Eye, Trash2, Edit, BarChart3, HelpCircle, RefreshCw, 
+  Building2, Users, Package, CreditCard, Bell, Settings, Shield, Activity,
+  Globe, ShoppingCart, Database, TrendingUp, Lock, UserCheck, Server,
+  ChevronDown, Menu, X
+} from 'lucide-react'
 import toast from 'react-hot-toast'
+
+// Import all the new components
+import AdminUserManagement from '@/components/AdminUserManagement'
+import AdminAuditLogs from '@/components/AdminAuditLogs'
+import AdminSecuritySettings from '@/components/AdminSecuritySettings'
+import AdminLoginAttempts from '@/components/AdminLoginAttempts'
+import AdminSystemStats from '@/components/AdminSystemStats'
+import AdminCompanyApproval from '@/components/AdminCompanyApproval'
+import POSVendorManagement from '@/components/POSVendorManagement'
+import MarketplaceIntegrationManager from '@/components/MarketplaceIntegrationManager'
+import ProductCatalogManagement from '@/components/ProductCatalogManagement'
+import SystemHealthMonitor from '@/components/SystemHealthMonitor'
+import APIUsageDashboard from '@/components/APIUsageDashboard'
+
+// Import existing components
 import InvoiceForm from '@/components/InvoiceForm'
 import InvoiceList from '@/components/InvoiceList'
 import InvoiceView from '@/components/InvoiceView'
@@ -18,8 +38,58 @@ import RecurringInvoicesList from '@/components/RecurringInvoicesList'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { Invoice, Company, Customer, SearchFilters, Product, InvoiceTemplate, RecurringInvoice } from '@/types'
 
+type ViewType = 
+  | 'dashboard' 
+  | 'invoices' 
+  | 'admin-users'
+  | 'admin-audit-logs'
+  | 'admin-security'
+  | 'admin-login-attempts'
+  | 'admin-system-stats'
+  | 'admin-companies'
+  | 'pos-vendors'
+  | 'marketplace-integrations'
+  | 'product-catalog'
+  | 'invoice-templates'
+  | 'system-health'
+  | 'api-usage'
+
+interface NavigationItem {
+  id: ViewType
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  category: string
+  adminOnly?: boolean
+}
+
+const navigationItems: NavigationItem[] = [
+  // Main Navigation
+  { id: 'dashboard', label: 'Dashboard', icon: BarChart3, category: 'main' },
+  { id: 'invoices', label: 'Invoices', icon: FileText, category: 'main' },
+  
+  // Product & Template Management
+  { id: 'product-catalog', label: 'Product Catalog', icon: Package, category: 'products' },
+  { id: 'invoice-templates', label: 'Invoice Templates', icon: FileText, category: 'products' },
+  
+  // Admin Tools
+  { id: 'admin-users', label: 'User Management', icon: Users, category: 'admin', adminOnly: true },
+  { id: 'admin-companies', label: 'Company Approval', icon: Building2, category: 'admin', adminOnly: true },
+  { id: 'admin-audit-logs', label: 'Audit Logs', icon: Activity, category: 'admin', adminOnly: true },
+  { id: 'admin-security', label: 'Security Settings', icon: Shield, category: 'admin', adminOnly: true },
+  { id: 'admin-login-attempts', label: 'Login Attempts', icon: Lock, category: 'admin', adminOnly: true },
+  { id: 'admin-system-stats', label: 'System Statistics', icon: TrendingUp, category: 'admin', adminOnly: true },
+  
+  // Integrations & APIs
+  { id: 'pos-vendors', label: 'POS Vendors', icon: ShoppingCart, category: 'integrations', adminOnly: true },
+  { id: 'marketplace-integrations', label: 'Marketplace Integrations', icon: Globe, category: 'integrations', adminOnly: true },
+  { id: 'api-usage', label: 'API Usage', icon: Database, category: 'integrations', adminOnly: true },
+  
+  // System Monitoring
+  { id: 'system-health', label: 'System Health', icon: Server, category: 'monitoring', adminOnly: true },
+]
+
 function AppContent() {
-  const [currentView, setCurrentView] = useState<'dashboard' | 'invoices'>('dashboard')
+  const [currentView, setCurrentView] = useState<ViewType>('dashboard')
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [companies, setCompanies] = useState<Company[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -29,25 +99,38 @@ function AppContent() {
   const [showRecurringDashboard, setShowRecurringDashboard] = useState(false)
   const [showRecurringForm, setShowRecurringForm] = useState(false)
   const [recurringInvoices, setRecurringInvoices] = useState<RecurringInvoice[]>([])
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
-  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null)
-  const [editingRecurring, setEditingRecurring] = useState<RecurringInvoice | null>(null)
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | undefined>(undefined)
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | undefined>(undefined)
+  const [editingRecurring, setEditingRecurring] = useState<RecurringInvoice | undefined>(undefined)
   const [filters, setFilters] = useState<SearchFilters>({})
   const [loading, setLoading] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [userRole, setUserRole] = useState<'user' | 'admin'>('user') // Mock user role
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+
+  // Mock authentication check - in real app, this would check actual user role
+  useEffect(() => {
+    // Simulate checking user role from localStorage or API
+    const storedRole = localStorage.getItem('userRole') as 'user' | 'admin' | null
+    if (storedRole) {
+      setUserRole(storedRole)
+    }
+    // For demo purposes, let's assume admin role
+    setUserRole('admin')
+  }, [])
 
   const confirmAction = (message: string): Promise<boolean> => {
     return new Promise((resolve) => {
       toast((t) => (
         <div className="flex items-center space-x-4">
-          <span>{message}</span>
+          <span className="text-base font-medium">{message}</span>
           <button
             onClick={() => {
               toast.dismiss(t.id)
               resolve(true)
             }}
-            className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+            className="btn btn-sm btn-danger"
           >
             Yes
           </button>
@@ -56,13 +139,13 @@ function AppContent() {
               toast.dismiss(t.id)
               resolve(false)
             }}
-            className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+            className="btn btn-sm btn-secondary"
           >
             No
           </button>
         </div>
       ), {
-        duration: 0, // Don't auto-dismiss
+        duration: 0,
         position: 'top-center',
       })
     })
@@ -132,7 +215,7 @@ function AppContent() {
       if (response.ok) {
         const updatedRecurring = await response.json()
         setRecurringInvoices(recurringInvoices.map(inv => inv.id === updatedRecurring.id ? updatedRecurring : inv))
-        setEditingRecurring(null)
+        setEditingRecurring(undefined)
         setShowRecurringForm(false)
         fetchRecurringInvoices()
       }
@@ -212,7 +295,6 @@ function AppContent() {
     }
   }
 
-
   const fetchData = async () => {
     try {
       const [companiesRes, customersRes] = await Promise.all([
@@ -228,7 +310,7 @@ function AppContent() {
         setCompanies(companiesData)
         setCustomers(customersData)
       } else {
-        // Use mock data when API is not available
+        // Mock data for demo
         setCompanies([
           { id: 1, tax_id: "1234567890123", company_name: "Demo Company Ltd.", address: "123 Demo St, Bangkok", phone: "02-123-4567", email: "info@demo.com", certificate_path: "", created_at: "2024-01-01", updated_at: "2024-01-01" },
           { id: 2, tax_id: "9876543210987", company_name: "Test Corporation", address: "456 Test Ave, Bangkok", phone: "02-987-6543", email: "contact@test.com", certificate_path: "", created_at: "2024-01-01", updated_at: "2024-01-01" }
@@ -241,7 +323,7 @@ function AppContent() {
       }
     } catch (error) {
       console.error('Error fetching data:', error)
-      // Use mock data when API fails
+      // Mock data for demo
       setCompanies([
         { id: 1, tax_id: "1234567890123", company_name: "Demo Company Ltd.", address: "123 Demo St, Bangkok", phone: "02-123-4567", email: "info@demo.com", certificate_path: "", created_at: "2024-01-01", updated_at: "2024-01-01" },
         { id: 2, tax_id: "9876543210987", company_name: "Test Corporation", address: "456 Test Ave, Bangkok", phone: "02-987-6543", email: "contact@test.com", certificate_path: "", created_at: "2024-01-01", updated_at: "2024-01-01" }
@@ -271,7 +353,7 @@ function AppContent() {
         const data = await response.json()
         setInvoices(data)
       } else {
-        // Use mock invoice data when API is not available
+        // Mock data for demo
         setInvoices([
           {
             id: 1,
@@ -289,42 +371,11 @@ function AppContent() {
             payment_date: "2024-01-20",
             created_at: "2024-01-15",
             updated_at: "2024-01-20"
-          },
-          {
-            id: 2,
-            invoice_no: "INV-2024-002",
-            issue_date: "2024-01-20",
-            due_date: "2024-02-20",
-            company_id: 1,
-            customer_id: 2,
-            subtotal: 15000,
-            vat_amount: 1050,
-            total_amount: 16050,
-            status: "sent",
-            payment_status: "unpaid",
-            created_at: "2024-01-20",
-            updated_at: "2024-01-20"
-          },
-          {
-            id: 3,
-            invoice_no: "INV-2024-003",
-            issue_date: "2024-01-25",
-            due_date: "2024-01-25",
-            company_id: 2,
-            customer_id: 1,
-            subtotal: 8000,
-            vat_amount: 560,
-            total_amount: 8560,
-            status: "overdue",
-            payment_status: "unpaid",
-            created_at: "2024-01-25",
-            updated_at: "2024-01-25"
           }
         ])
       }
     } catch (error) {
       console.error('Error fetching invoices:', error)
-      // Use mock invoice data when API fails
       setInvoices([
         {
           id: 1,
@@ -402,7 +453,7 @@ function AppContent() {
       if (response.ok) {
         const updatedInvoice = await response.json()
         setInvoices(invoices.map(inv => inv.id === updatedInvoice.id ? updatedInvoice : inv))
-        setEditingInvoice(null)
+        setEditingInvoice(undefined)
         fetchInvoices()
       }
     } catch (error) {
@@ -468,25 +519,7 @@ function AppContent() {
     }
   }
 
-  const handleSelectProduct = (product: Product) => {
-    console.log('Selected product:', product)
-    setShowProductCatalog(false)
-  }
-
-  const handleSelectTemplate = (template: InvoiceTemplate) => {
-    console.log('Selected template:', template)
-    // This would load the template data into the form
-    setShowTemplateManager(false)
-    setShowForm(true)
-  }
-
-  const handleSaveAsTemplate = (invoiceData: any, templateName: string) => {
-    console.log('Saving as template:', templateName, invoiceData)
-    // This would save the current invoice as a template
-  }
-
   const exportData = () => {
-    // Export all invoices to CSV/Excel
     const csvContent = "data:text/csv;charset=utf-8," 
       + "Invoice No,Customer,Issue Date,Total Amount,Status\n"
       + invoices.map(inv => 
@@ -509,213 +542,307 @@ function AppContent() {
     }
   }
 
+  const toggleDarkMode = () => {
+    document.documentElement.classList.toggle('dark')
+  }
+
+  const renderCurrentView = () => {
+    switch (currentView) {
+      case 'dashboard':
+        return <Dashboard onCreateInvoice={() => setShowForm(true)} />
+      
+      case 'invoices':
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="h2">Invoices</h2>
+              <div className="flex space-x-3">
+                <SearchAndFilter 
+                  filters={filters} 
+                  onFiltersChange={setFilters}
+                  customers={customers}
+                />
+                <button
+                  onClick={() => setShowForm(true)}
+                  className="btn btn-primary"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Invoice
+                </button>
+              </div>
+            </div>
+            <InvoiceList
+              invoices={invoices}
+              onEdit={setEditingInvoice}
+              onDelete={handleDeleteInvoice}
+              onView={setSelectedInvoice}
+              onDownloadPDF={downloadPDF}
+              onDownloadXML={downloadXML}
+            />
+          </div>
+        )
+      
+      case 'admin-users':
+        return <AdminUserManagement />
+      
+      case 'admin-audit-logs':
+        return <AdminAuditLogs />
+      
+      case 'admin-security':
+        return <AdminSecuritySettings />
+      
+      case 'admin-login-attempts':
+        return <AdminLoginAttempts />
+      
+      case 'admin-system-stats':
+        return <AdminSystemStats />
+      
+      case 'admin-companies':
+        return <AdminCompanyApproval />
+      
+      case 'pos-vendors':
+        return <POSVendorManagement />
+      
+      case 'marketplace-integrations':
+        return <MarketplaceIntegrationManager />
+      
+      case 'product-catalog':
+        return <ProductCatalogManagement />
+      
+      case 'invoice-templates':
+        return <InvoiceTemplateManager />
+      
+      case 'system-health':
+        return <SystemHealthMonitor />
+      
+      case 'api-usage':
+        return <APIUsageDashboard />
+      
+      default:
+        return <Dashboard onCreateInvoice={() => setShowForm(true)} />
+    }
+  }
+
+  const filteredNavigationItems = navigationItems.filter(item => 
+    !item.adminOnly || userRole === 'admin'
+  )
+
+  const groupedNavigation = filteredNavigationItems.reduce((groups, item) => {
+    if (!groups[item.category]) {
+      groups[item.category] = []
+    }
+    groups[item.category].push(item)
+    return groups
+  }, {} as Record<string, NavigationItem[]>)
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="loading-text">Loading E-Tax System...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <KeyboardShortcuts
-        onCreateInvoice={() => {
-          setShowForm(true)
-          setCurrentView('invoices')
-        }}
-        onSaveDraft={() => {
-          if (showForm) {
-            // Save current form as draft
-            const form = document.querySelector('form') as HTMLFormElement
-            if (form) {
-              const formData = new FormData(form)
-              console.log('Saving draft...', Object.fromEntries(formData))
-            }
-          }
-        }}
-        onSearch={focusSearch}
-        onToggleDarkMode={() => {}} // Handled by ThemeProvider
-        onExportData={exportData}
-      />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">E-Tax Invoice System</h1>
-              <p className="mt-2 text-gray-600 dark:text-gray-400">Manage your Thailand e-Tax invoices</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <DarkModeToggle />
-              <button
-                onClick={() => toast('Press ? for keyboard shortcuts', {
-                  icon: '⌨️',
-                })}
-                className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                title="Keyboard Shortcuts (?)"
-              >
-                <HelpCircle className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-              </button>
-            </div>
+    <ThemeProvider>
+      <div className="min-h-screen bg-gray-50 flex">
+        {/* Sidebar */}
+        <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
+          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
+            <h1 className="h1 text-blue-600">E-Tax</h1>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-2 rounded-md hover:bg-gray-100"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
           
-          <div className="mt-6 flex space-x-4">
-            <button
-              onClick={() => setCurrentView('dashboard')}
-              className={`flex items-center px-4 py-2 rounded-md transition-colors ${
-                currentView === 'dashboard'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
-              }`}
-            >
-              <BarChart3 className="w-5 h-5 mr-2" />
-              Dashboard
-            </button>
-            <button
-              onClick={() => setCurrentView('invoices')}
-              className={`flex items-center px-4 py-2 rounded-md transition-colors ${
-                currentView === 'invoices'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
-              }`}
-            >
-              <FileText className="w-5 h-5 mr-2" />
-              Invoices
-            </button>
-          </div>
+          <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
+            {Object.entries(groupedNavigation).map(([category, items]) => (
+              <div key={category}>
+                <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                </h3>
+                <div className="space-y-1">
+                  {items.map((item) => {
+                    const Icon = item.icon
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setCurrentView(item.id)
+                          setSidebarOpen(false)
+                        }}
+                        className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                          currentView === item.id
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        }`}
+                      >
+                        <Icon className="h-4 w-4 mr-3" />
+                        {item.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </nav>
         </div>
 
-        {/* Dashboard View */}
-        {currentView === 'dashboard' && (
-          <Dashboard 
-            onCreateInvoice={() => {
-              setShowForm(true)
-              setCurrentView('invoices')
-            }} 
-          />
-        )}
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col">
+          {/* Header */}
+          <header className="bg-white shadow-sm border-b border-gray-200">
+            <div className="px-4 sm:px-6 lg:px-8">
+              <div className="flex justify-between items-center h-16">
+                <div className="flex items-center">
+                  <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="lg:hidden p-2 rounded-md hover:bg-gray-100 mr-4"
+                  >
+                    <Menu className="h-5 w-5" />
+                  </button>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    {navigationItems.find(item => item.id === currentView)?.label || 'Dashboard'}
+                  </h2>
+                </div>
+                
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() => setShowProductCatalog(true)}
+                    className="btn btn-sm btn-outline"
+                    title="Product Catalog"
+                  >
+                    <Package className="h-4 w-4" />
+                  </button>
+                  
+                  <button
+                    onClick={() => setShowTemplateManager(true)}
+                    className="btn btn-sm btn-outline"
+                    title="Template Manager"
+                  >
+                    <FileText className="h-4 w-4" />
+                  </button>
 
-        {/* Invoices View */}
-        {currentView === 'invoices' && (
-          <>
-            <div className="mb-6 flex justify-between items-center">
-              <div className="flex space-x-4">
-                <button
-                  onClick={() => setShowForm(true)}
-                  className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
-                >
-                  <Plus className="w-5 h-5 mr-2" />
-                  New Invoice
-                </button>
-                <button
-                  onClick={() => setShowProductCatalog(true)}
-                  className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <Plus className="w-5 h-5 mr-2" />
-                  Product Catalog
-                </button>
-                <button
-                  onClick={() => setShowTemplateManager(true)}
-                  className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <FileText className="w-5 h-5 mr-2" />
-                  Templates
-                </button>
+                  <button
+                    onClick={() => setShowRecurringDashboard(true)}
+                    className="btn btn-sm btn-ghost"
+                    title="Recurring Invoices"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </button>
+
+                  <DarkModeToggle />
+                  <KeyboardShortcuts
+                    onCreateInvoice={() => {
+                      setShowForm(true)
+                      setCurrentView('invoices')
+                    }}
+                    onSaveDraft={() => {
+                      if (showForm) {
+                        const form = document.querySelector('form') as HTMLFormElement
+                        if (form) {
+                          const formData = new FormData(form)
+                          console.log('Saving draft...', Object.fromEntries(formData))
+                        }
+                      }
+                    }}
+                    onSearch={focusSearch}
+                    onToggleDarkMode={toggleDarkMode}
+                    onExportData={exportData}
+                  />
+                  <button
+                    className="btn btn-sm btn-ghost"
+                    title="Help"
+                  >
+                    <HelpCircle className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
+          </header>
 
-            <SearchAndFilter
-              filters={filters}
-              onFiltersChange={setFilters}
-              customers={customers}
-            />
-
-            <InvoiceList
-              invoices={invoices}
-              onView={setSelectedInvoice}
-              onEdit={setEditingInvoice}
-              onDelete={handleDeleteInvoice}
-              onDownloadPDF={downloadPDF}
-              onDownloadXML={downloadXML}
-            />
-          </>
-        )}
+          {/* Main Content Area */}
+          <main className="flex-1 overflow-auto">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+              {renderCurrentView()}
+            </div>
+          </main>
+        </div>
 
         {/* Modals */}
         {showForm && (
           <InvoiceForm
             companies={companies}
             customers={customers}
-            invoice={editingInvoice || undefined}
+            invoice={editingInvoice}
             onSubmit={editingInvoice ? handleUpdateInvoice : handleCreateInvoice}
             onSaveDraft={handleSaveDraft}
             onCancel={() => {
               setShowForm(false)
-              setEditingInvoice(null)
+              setEditingInvoice(undefined)
             }}
           />
-        )}
-
-        {showProductCatalog && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
-              <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Product Catalog</h2>
-                <button
-                  onClick={() => setShowProductCatalog(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                >
-                  ×
-                </button>
-              </div>
-              <ProductCatalog onSelectProduct={handleSelectProduct} />
-            </div>
-          </div>
-        )}
-
-        {showTemplateManager && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
-              <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Invoice Templates</h2>
-                <button
-                  onClick={() => setShowTemplateManager(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                >
-                  ×
-                </button>
-              </div>
-              <InvoiceTemplateManager
-                onSelectTemplate={handleSelectTemplate}
-                onSaveAsTemplate={handleSaveAsTemplate}
-                companies={companies}
-                customers={customers}
-              />
-            </div>
-          </div>
         )}
 
         {selectedInvoice && (
           <InvoiceView
             invoice={selectedInvoice}
-            onClose={() => setSelectedInvoice(null)}
+            onClose={() => setSelectedInvoice(undefined)}
             onEdit={() => {
               setEditingInvoice(selectedInvoice)
-              setSelectedInvoice(null)
+              setSelectedInvoice(undefined)
+            }}
+          />
+        )}
+
+        {showProductCatalog && (
+          <ProductCatalog />
+        )}
+
+        {showTemplateManager && (
+          <InvoiceTemplateManager
+            onSelectTemplate={(template) => {
+              console.log('Selected template:', template)
+              setShowTemplateManager(false)
+              setShowForm(true)
+            }}
+            onSaveAsTemplate={(invoiceData, templateName) => {
+              console.log('Saving as template:', templateName, invoiceData)
+            }}
+            companies={companies}
+            customers={customers}
+          />
+        )}
+
+        {showRecurringDashboard && (
+          <RecurringInvoicesDashboard
+            onCreateRecurring={() => setShowRecurringForm(true)}
+          />
+        )}
+
+        {showRecurringForm && (
+          <RecurringInvoiceForm
+            companies={companies}
+            customers={customers}
+            recurringInvoice={editingRecurring}
+            onSubmit={editingRecurring ? handleUpdateRecurringInvoice : handleCreateRecurringInvoice}
+            onCancel={() => {
+              setShowRecurringForm(false)
+              setEditingRecurring(undefined)
             }}
           />
         )}
       </div>
-    </div>
+    </ThemeProvider>
   )
 }
 
 export default function Home() {
-  return (
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
-  )
+  return <AppContent />
 }
