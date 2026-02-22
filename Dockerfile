@@ -24,9 +24,11 @@ FROM alpine:latest AS production
 RUN apk --no-cache add ca-certificates
 WORKDIR /app
 
-# Copy the built binary and .env file
+# Copy the built binary
 COPY --from=builder /app/main .
-COPY --from=builder /app/backend/.env .
+
+# Copy .env file if it exists (optional)
+COPY --from=builder /app/backend/.env . || true
 
 # Make the binary executable
 RUN chmod +x /app/main
