@@ -22,7 +22,7 @@ services:
   - type: web
     name: etax-api
     env: go
-    repo: https://github.com/your-username/E-Tax
+    repo: https://github.com/sannyuntwin/E-Tax
     rootDir: backend
     buildCommand: go mod download && go build -o bin/main .
     startCommand: ./bin/main
