@@ -164,6 +164,12 @@ func (c *Config) IsDevelopment() bool {
 }
 
 func (c *Config) DatabaseURL() string {
+	// Check if DATABASE_URL is set (for Render)
+	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
+		return dbURL
+	}
+	
+	// Fall back to individual DB variables (for local development)
 	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
 		c.Database.Host,
 		c.Database.User,
