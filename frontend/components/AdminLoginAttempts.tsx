@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import apiClient from '@/utils/api';
 
 interface LoginAttempt {
   id: number;
@@ -36,11 +37,7 @@ const AdminLoginAttempts: React.FC = () => {
         ...(filters.success && { success: filters.success }),
       });
 
-      const response = await fetch(`/api/admin/login-attempts?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await apiClient.get(`/api/admin/login-attempts?${params}`);
 
       if (!response.ok) throw new Error('Failed to fetch login attempts');
 

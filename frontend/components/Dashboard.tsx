@@ -5,19 +5,35 @@ import { DollarSign, FileText, AlertCircle, TrendingUp, Users, Clock } from 'luc
 import { DashboardStats } from '@/types/enhancements'
 import apiClient from '@/utils/api'
 
-interface DashboardProps {
-  onCreateInvoice: () => void
+interface User {
+  id: number
+  username: string
+  first_name: string
+  last_name: string
+  email: string
+  role: string
+  is_active: boolean
+  last_login?: string
+  created_at: string
+  updated_at: string
 }
 
-export default function Dashboard({ onCreateInvoice }: DashboardProps) {
+interface DashboardProps {
+  onCreateInvoice: () => void
+  user: User
+}
+
+export default function Dashboard({ onCreateInvoice, user }: DashboardProps) {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
   useEffect(() => {
-    fetchDashboardStats()
-  }, [])
+    if (user) {
+      fetchDashboardStats()
+    }
+  }, [user])
 
   const fetchDashboardStats = async () => {
     try {

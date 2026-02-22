@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import apiClient from '@/utils/api';
 
 interface Company {
   id: number;
@@ -15,7 +16,24 @@ interface Company {
   updated_at: string;
 }
 
-const AdminCompanyApproval: React.FC = () => {
+interface User {
+  id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  role: string;
+  is_active: boolean;
+  last_login?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface AdminCompanyApprovalProps {
+  user: User;
+}
+
+const AdminCompanyApproval: React.FC<AdminCompanyApprovalProps> = ({ user }) => {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,8 +44,10 @@ const AdminCompanyApproval: React.FC = () => {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchCompanies();
-  }, [currentPage, searchTerm]);
+    if (user && user.role === 'admin') {
+      fetchCompanies();
+    }
+  }, [currentPage, searchTerm, user]);
 
   const fetchCompanies = async () => {
     try {
@@ -38,11 +58,7 @@ const AdminCompanyApproval: React.FC = () => {
         ...(searchTerm && { search: searchTerm }),
       });
 
-      const response = await fetch(`/api/admin/companies/all?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await apiClient.get(`/api/admin/companies/all?${params}`);
 
       if (!response.ok) throw new Error('Failed to fetch companies');
 

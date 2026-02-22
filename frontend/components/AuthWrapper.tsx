@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Authentication from './Authentication'
+import apiClient from '@/utils/api'
 
 interface User {
   id: number
@@ -25,8 +26,6 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
   const [loading, setLoading] = useState(true)
   const [showAuth, setShowAuth] = useState(false)
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-
   useEffect(() => {
     checkAuth()
   }, [])
@@ -41,11 +40,7 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
     }
 
     try {
-      const response = await fetch(`${API_BASE}/api/profile`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      })
+      const response = await apiClient.get('/api/profile')
 
       if (response.ok) {
         const userData = await response.json()

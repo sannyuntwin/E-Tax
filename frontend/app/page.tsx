@@ -180,20 +180,22 @@ function AppContent({ user }: { user: User }) {
   }
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    if (user) {
+      fetchData()
+    }
+  }, [user])
 
   useEffect(() => {
-    if (currentView === 'invoices') {
+    if (user && currentView === 'invoices') {
       fetchInvoices()
     }
-  }, [currentView, filters])
+  }, [user, currentView, filters])
 
   useEffect(() => {
-    if (showRecurringDashboard) {
+    if (user && showRecurringDashboard) {
       fetchRecurringInvoices()
     }
-  }, [showRecurringDashboard])
+  }, [user, showRecurringDashboard])
 
   const fetchRecurringInvoices = async () => {
     try {
@@ -577,7 +579,7 @@ function AppContent({ user }: { user: User }) {
   const renderCurrentView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard onCreateInvoice={() => setShowForm(true)} />
+        return <Dashboard onCreateInvoice={() => setShowForm(true)} user={user} />
       
       case 'invoices':
         return (
@@ -626,7 +628,7 @@ function AppContent({ user }: { user: User }) {
         return <AdminSystemStats />
       
       case 'admin-companies':
-        return <AdminCompanyApproval />
+        return <AdminCompanyApproval user={user} />
       
       case 'pos-vendors':
         return <POSVendorManagement />
@@ -650,7 +652,7 @@ function AppContent({ user }: { user: User }) {
         return <APIUsageDashboard />
       
       default:
-        return <Dashboard onCreateInvoice={() => setShowForm(true)} />
+        return <Dashboard onCreateInvoice={() => setShowForm(true)} user={user} />
     }
   }
 

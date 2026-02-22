@@ -2,7 +2,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
 
 class ApiClient {
   private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('access_token')
+    const token = localStorage.getItem('access_token') || localStorage.getItem('token')
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     }

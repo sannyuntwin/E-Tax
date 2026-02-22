@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import apiClient from '@/utils/api';
 
 interface SystemStats {
   users: {
@@ -33,11 +34,7 @@ const AdminSystemStats: React.FC = () => {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/system/stats', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await apiClient.get('/api/admin/system/stats');
 
       if (!response.ok) throw new Error('Failed to fetch system statistics');
 

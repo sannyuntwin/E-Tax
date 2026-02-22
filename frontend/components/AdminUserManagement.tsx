@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import { apiClient } from '../utils/api';
 
 interface User {
   id: number;
@@ -57,11 +58,7 @@ const AdminUserManagement: React.FC = () => {
         ...(searchTerm && { search: searchTerm }),
       });
 
-      const response = await fetch(`/api/admin/users?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await apiClient.get(`/api/admin/users?${params}`);
 
       if (!response.ok) throw new Error('Failed to fetch users');
 
@@ -79,20 +76,9 @@ const AdminUserManagement: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const url = editingUser 
-        ? `/api/admin/users/${editingUser.id}`
-        : '/api/admin/users';
-      
-      const method = editingUser ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = editingUser 
+        ? await apiClient.put(`/api/admin/users/${editingUser.id}`, formData)
+        : await apiClient.post('/api/admin/users', formData);
 
       if (!response.ok) throw new Error('Failed to save user');
 
@@ -111,12 +97,7 @@ const AdminUserManagement: React.FC = () => {
     if (!confirm('Are you sure you want to delete this user?')) return;
 
     try {
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await apiClient.delete(`/api/admin/users/${userId}`);
 
       if (!response.ok) throw new Error('Failed to delete user');
 

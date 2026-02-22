@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import apiClient from '@/utils/api';
 
 interface AuditLog {
   id: number;
@@ -40,11 +41,7 @@ const AdminAuditLogs: React.FC = () => {
         ...(filters.user_id && { user_id: filters.user_id }),
       });
 
-      const response = await fetch(`/api/admin/audit-logs?${params}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await apiClient.get(`/api/admin/audit-logs?${params}`);
 
       if (!response.ok) throw new Error('Failed to fetch audit logs');
 

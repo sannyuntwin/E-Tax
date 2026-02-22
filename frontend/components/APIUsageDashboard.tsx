@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import apiClient from '@/utils/api';
 
 interface APIUsage {
   endpoint: string;
@@ -46,11 +47,7 @@ const APIUsageDashboard: React.FC = () => {
   const fetchUsage = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/api-usage?period=${selectedPeriod}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await apiClient.get(`/api/api-usage?period=${selectedPeriod}`);
 
       if (!response.ok) throw new Error('Failed to fetch API usage');
 
@@ -66,11 +63,7 @@ const APIUsageDashboard: React.FC = () => {
 
   const fetchQuotas = async () => {
     try {
-      const response = await fetch('/api/usage-quotas', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await apiClient.get('/api/usage-quotas');
 
       if (!response.ok) throw new Error('Failed to fetch usage quotas');
 

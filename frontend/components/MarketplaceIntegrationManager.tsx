@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import apiClient from '@/utils/api';
 
 interface MarketplaceIntegration {
   id: number;
@@ -57,11 +58,7 @@ const MarketplaceIntegrationManager: React.FC = () => {
   const fetchIntegrations = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/marketplace-integrations', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await apiClient.get('/api/marketplace-integrations');
 
       if (!response.ok) throw new Error('Failed to fetch marketplace integrations');
 

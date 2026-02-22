@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import apiClient from '@/utils/api';
 
 interface SecuritySettings {
   id?: number;
@@ -46,11 +47,7 @@ const AdminSecuritySettings: React.FC = () => {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/security-settings', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await apiClient.get('/api/admin/security/settings');
 
       if (!response.ok) throw new Error('Failed to fetch security settings');
 
@@ -76,14 +73,7 @@ const AdminSecuritySettings: React.FC = () => {
         ip_whitelist: JSON.stringify(ipList),
       };
 
-      const response = await fetch('/api/admin/security-settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(updatedSettings),
-      });
+      const response = await apiClient.put('/api/admin/security/settings', updatedSettings);
 
       if (!response.ok) throw new Error('Failed to update security settings');
 

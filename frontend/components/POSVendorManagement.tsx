@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import apiClient from '@/utils/api';
 
 interface POSVendor {
   id: number;
@@ -55,11 +56,7 @@ const POSVendorManagement: React.FC = () => {
   const fetchVendors = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/pos-vendors', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await apiClient.get('/api/pos-vendors');
 
       if (!response.ok) throw new Error('Failed to fetch POS vendors');
 
