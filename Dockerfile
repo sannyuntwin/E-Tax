@@ -7,13 +7,13 @@ WORKDIR /app
 # Install git (required for go modules)
 RUN apk add --no-cache git
 
-# Copy go mod files from backend directory
+# Copy go mod files
 COPY backend/go.mod backend/go.sum ./
 
 # Download dependencies
 RUN go mod download
 
-# Copy source code from backend directory
+# Copy source code
 COPY backend/ .
 
 # Build application
