@@ -24,6 +24,5 @@ FROM alpine:latest AS production
 RUN apk --no-cache add ca-certificates
 WORKDIR /app
 COPY --from=builder /app/main .
-COPY --from=builder /app/.env .
 EXPOSE 8080
 CMD ["./main"]
