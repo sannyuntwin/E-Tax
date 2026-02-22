@@ -27,8 +27,8 @@ WORKDIR /app
 # Copy the built binary
 COPY --from=builder /app/main .
 
-# Copy .env file if it exists (using correct path)
-COPY --from=builder /app/backend/.env . || true
+# Copy .env file from correct location
+COPY --from=builder /app/.env .
 
 # Make the binary executable
 RUN chmod +x /app/main
