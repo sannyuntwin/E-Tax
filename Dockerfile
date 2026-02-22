@@ -28,7 +28,10 @@ WORKDIR /app
 COPY --from=builder /app/main .
 COPY --from=builder /app/backend/.env .
 
-# Verify the binary exists
+# Make the binary executable
+RUN chmod +x /app/main
+
+# Verify everything is in place
 RUN ls -la /app/
 
 EXPOSE 8080
