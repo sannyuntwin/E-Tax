@@ -27,7 +27,7 @@ WORKDIR /app
 # Copy the built binary
 COPY --from=builder /app/main .
 
-# Copy .env file if it exists (optional)
+# Copy .env file if it exists (using correct path)
 COPY --from=builder /app/backend/.env . || true
 
 # Make the binary executable
