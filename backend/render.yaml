@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: etax-backend
+    env: docker
+    plan: free
+    region: oregon  # Change to your preferred region
+    branch: master
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: DATABASE_URL
+        value: postgresql://user:password@postgres:5432/etax?sslmode=disable
+      - key: JWT_SECRET
+        value: your-secure-jwt-secret
+      - key: APP_ENV
+        value: production

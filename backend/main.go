@@ -26,6 +26,11 @@ func main() {
 	if cfg.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
 	}
+	
+	// Render-specific port handling
+	if port := os.Getenv("PORT"); port != "" {
+		cfg.Port = port
+	}
 
 	// Initialize database
 	db, err := database.InitDB()
