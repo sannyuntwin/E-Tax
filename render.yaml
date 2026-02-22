@@ -5,8 +5,8 @@ services:
     plan: free
     region: oregon  # Change to your preferred region
     branch: master
-    dockerContext: ./backend
-    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     envVars:
       - key: PORT
