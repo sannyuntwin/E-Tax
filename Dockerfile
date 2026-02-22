@@ -13,7 +13,7 @@ COPY backend/go.mod backend/go.sum ./
 # Download dependencies
 RUN go mod download
 
-# Copy source code
+# Copy source code and .env file
 COPY backend/ .
 
 # Build application
@@ -24,10 +24,8 @@ FROM alpine:latest AS production
 RUN apk --no-cache add ca-certificates
 WORKDIR /app
 
-# Copy the built binary
+# Copy the built binary and .env file
 COPY --from=builder /app/main .
-
-# Copy .env file from correct location
 COPY --from=builder /app/.env .
 
 # Make the binary executable
