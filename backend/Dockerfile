@@ -17,12 +17,12 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o etax-api .
 
 # Production build stage
 FROM alpine:latest AS production
 RUN apk --no-cache add ca-certificates
 WORKDIR /app
-COPY --from=builder /app/main .
+COPY --from=builder /app/etax-api .
 EXPOSE 8080
-CMD ["./main"]
+CMD ["./etax-api"]
