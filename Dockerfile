@@ -23,7 +23,13 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 FROM alpine:latest AS production
 RUN apk --no-cache add ca-certificates
 WORKDIR /app
+
+# Copy the built binary and .env file
 COPY --from=builder /app/main .
 COPY --from=builder /app/backend/.env .
+
+# Verify the binary exists
+RUN ls -la /app/
+
 EXPOSE 8080
 CMD ["./main"]
