@@ -1,0 +1,61 @@
+# Git
+.git/
+.gitignore
+
+# Documentation
+docs/
+README.md
+*.md
+
+# Frontend (not needed for backend deployment)
+frontend/
+
+# Docker files (not needed for Render)
+docker/
+Dockerfile
+docker-compose*.yml
+
+# Development files
+.env
+.env.local
+.env.development
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test files
+__tests__/
+*.test.js
+*.test.go
+coverage/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Build artifacts (will be created during deployment)
+bin/
+dist/
+build/
+
+# Node modules (if any)
+node_modules/
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Scripts not needed for deployment
+scripts/
+deploy.sh
