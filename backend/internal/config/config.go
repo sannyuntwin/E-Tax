@@ -164,7 +164,7 @@ func (c *Config) IsDevelopment() bool {
 }
 
 func (c *Config) DatabaseURL() string {
-	// Check if DATABASE_URL is set (for Render)
+	// Check if DATABASE_URL is set (e.g. docker-compose)
 	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
 		return dbURL
 	}

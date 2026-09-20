@@ -52,7 +52,7 @@ const SystemHealthMonitor: React.FC = () => {
   const fetchHealth = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/api/admin/system/health');
+      const response = await apiClient.get('/api/v1/admin/system/health');
 
       if (!response.ok) throw new Error('Failed to fetch system health');
 

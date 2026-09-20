@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"etax/internal/database/models"
+	models "etax/internal/database/models"
 	"gorm.io/gorm"
 )
 

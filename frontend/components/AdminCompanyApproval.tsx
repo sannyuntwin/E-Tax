@@ -58,7 +58,7 @@ const AdminCompanyApproval: React.FC<AdminCompanyApprovalProps> = ({ user }) => 
         ...(searchTerm && { search: searchTerm }),
       });
 
-      const response = await apiClient.get(`/api/admin/companies/all?${params}`);
+      const response = await apiClient.get(`/api/v1/admin/companies/all?${params}`);
 
       if (!response.ok) throw new Error('Failed to fetch companies');
 
@@ -75,10 +75,10 @@ const AdminCompanyApproval: React.FC<AdminCompanyApprovalProps> = ({ user }) => 
 
   const handleApprove = async (companyId: number) => {
     try {
-      const response = await fetch(`/api/admin/companies/${companyId}/approve`, {
+      const response = await fetch(`/api/v1/admin/companies/${companyId}/approve`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
       });
 
@@ -96,10 +96,10 @@ const AdminCompanyApproval: React.FC<AdminCompanyApprovalProps> = ({ user }) => 
     if (!confirm('Are you sure you want to suspend this company?')) return;
 
     try {
-      const response = await fetch(`/api/admin/companies/${companyId}/suspend`, {
+      const response = await fetch(`/api/v1/admin/companies/${companyId}/suspend`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
       });
 
@@ -119,7 +119,7 @@ const AdminCompanyApproval: React.FC<AdminCompanyApprovalProps> = ({ user }) => 
   };
 
   const getStatusColor = (isActive: boolean) => {
-    return isActive 
+    return isActive
       ? 'bg-green-100 text-green-800'
       : 'bg-red-100 text-red-800';
   };
@@ -148,29 +148,29 @@ const AdminCompanyApproval: React.FC<AdminCompanyApprovalProps> = ({ user }) => 
           <div className="text-sm font-medium text-gray-600">Total Companies</div>
           <div className="text-2xl font-bold text-gray-900">{totalCompanies}</div>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="text-sm font-medium text-gray-600">Active</div>
           <div className="text-2xl font-bold text-green-600">
             {companies.filter(c => c.is_active).length}
           </div>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="text-sm font-medium text-gray-600">Suspended</div>
           <div className="text-2xl font-bold text-red-600">
             {companies.filter(c => !c.is_active).length}
           </div>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="text-sm font-medium text-gray-600">This Month</div>
           <div className="text-2xl font-bold text-blue-600">
             {companies.filter(c => {
               const createdDate = new Date(c.created_at);
               const now = new Date();
-              return createdDate.getMonth() === now.getMonth() && 
-                     createdDate.getFullYear() === now.getFullYear();
+              return createdDate.getMonth() === now.getMonth() &&
+                createdDate.getFullYear() === now.getFullYear();
             }).length}
           </div>
         </div>

@@ -43,7 +43,7 @@ export default function UsageAnalytics({ timeRange, onTimeRangeChange }: UsageAn
   const [endpoint, setEndpoint] = useState('')
   const [method, setMethod] = useState('')
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8081'
 
   useEffect(() => {
     fetchUsageData()
@@ -86,7 +86,7 @@ export default function UsageAnalytics({ timeRange, onTimeRangeChange }: UsageAn
         params.append('method', method)
       }
 
-      const response = await fetch(`${API_BASE}/api/api-usage?${params.toString()}`, {
+      const response = await fetch(`${API_BASE}/api/v1/api-usage?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },

@@ -13,7 +13,7 @@ export default function PaymentDashboard({ onCreatePayment, onViewReminders }: P
   const [stats, setStats] = useState<PaymentStats | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8081'
 
   useEffect(() => {
     fetchPaymentStats()
@@ -21,7 +21,7 @@ export default function PaymentDashboard({ onCreatePayment, onViewReminders }: P
 
   const fetchPaymentStats = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/payments/stats`)
+      const response = await fetch(`${API_BASE}/api/v1/payments/stats`)
       if (response.ok) {
         const data = await response.json()
         setStats(data)

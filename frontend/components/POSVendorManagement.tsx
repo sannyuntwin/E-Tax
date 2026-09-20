@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import apiClient from '@/utils/api';
+import { hasFeature, isLicenseActive } from '../utils/license';
 
 interface POSVendor {
   id: number;
@@ -56,7 +57,7 @@ const POSVendorManagement: React.FC = () => {
   const fetchVendors = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/api/pos-vendors');
+      const response = await apiClient.get('/api/v1/pos-vendors');
 
       if (!response.ok) throw new Error('Failed to fetch POS vendors');
 
@@ -73,17 +74,17 @@ const POSVendorManagement: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const url = editingVendor 
-        ? `/api/pos-vendors/${editingVendor.id}`
-        : '/api/pos-vendors';
-      
+      const url = editingVendor
+        ? `/api/v1/pos-vendors/${editingVendor.id}`
+        : '/api/v1/pos-vendors';
+
       const method = editingVendor ? 'PUT' : 'POST';
-      
+
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
         body: JSON.stringify(formData),
       });
@@ -103,10 +104,10 @@ const POSVendorManagement: React.FC = () => {
 
   const handleActivate = async (vendorId: number) => {
     try {
-      const response = await fetch(`/api/pos-vendors/${vendorId}/activate`, {
+      const response = await fetch(`/api/v1/pos-vendors/${vendorId}/activate`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
       });
 
@@ -122,10 +123,10 @@ const POSVendorManagement: React.FC = () => {
 
   const handleDeactivate = async (vendorId: number) => {
     try {
-      const response = await fetch(`/api/pos-vendors/${vendorId}/deactivate`, {
+      const response = await fetch(`/api/v1/pos-vendors/${vendorId}/deactivate`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
       });
 
@@ -141,10 +142,10 @@ const POSVendorManagement: React.FC = () => {
 
   const handleGenerateApiKeys = async (vendorId: number) => {
     try {
-      const response = await fetch(`/api/pos-vendors/${vendorId}/generate-api-key`, {
+      const response = await fetch(`/api/v1/pos-vendors/${vendorId}/generate-api-key`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
       });
 
@@ -153,7 +154,7 @@ const POSVendorManagement: React.FC = () => {
       const data = await response.json();
       toast.success('New API keys generated successfully');
       fetchVendors();
-      
+
       // Show the new keys
       alert(`New API Key: ${data.api_key}\nNew API Secret: ${data.api_secret}\n\nPlease save these securely.`);
     } catch (error) {
@@ -212,11 +213,15 @@ const POSVendorManagement: React.FC = () => {
           </button>
           <button
             onClick={() => {
+              if (!isLicenseActive()) {
+                toast.error('License not active. Please activate your license to add vendors.');
+                return;
+              }
               resetForm();
               setEditingVendor(null);
               setIsModalOpen(true);
             }}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+            className={`${!isLicenseActive() ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'} text-white px-4 py-2 rounded-lg transition-colors`}
           >
             Add Vendor
           </button>
@@ -229,25 +234,25 @@ const POSVendorManagement: React.FC = () => {
           <div className="text-sm font-medium text-gray-600">Total Vendors</div>
           <div className="text-2xl font-bold text-gray-900">{vendors.length}</div>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="text-sm font-medium text-gray-600">Active</div>
           <div className="text-2xl font-bold text-green-600">
             {vendors.filter(v => v.is_active).length}
           </div>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="text-sm font-medium text-gray-600">API Access</div>
           <div className="text-2xl font-bold text-blue-600">
             {vendors.filter(v => v.api_access).length}
           </div>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="text-sm font-medium text-gray-600">Avg Commission</div>
           <div className="text-2xl font-bold text-purple-600">
-            {vendors.length > 0 
+            {vendors.length > 0
               ? (vendors.reduce((sum, v) => sum + v.commission_rate, 0) / vendors.length).toFixed(1)
               : '0'}%
           </div>
@@ -319,9 +324,8 @@ const POSVendorManagement: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-2">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          vendor.api_access ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${vendor.api_access ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
                           {vendor.api_access ? 'Enabled' : 'Disabled'}
                         </span>
                         {vendor.api_access && (
@@ -362,9 +366,8 @@ const POSVendorManagement: React.FC = () => {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        vendor.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${vendor.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
                         {vendor.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
@@ -428,7 +431,7 @@ const POSVendorManagement: React.FC = () => {
             <h2 className="text-xl font-bold mb-4">
               {editingVendor ? 'Edit POS Vendor' : 'Create New POS Vendor'}
             </h2>
-            
+
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

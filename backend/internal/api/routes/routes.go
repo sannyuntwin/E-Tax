@@ -9,10 +9,15 @@ import (
 	"gorm.io/gorm"
 	"etax/internal/api/handlers/auth"
 	"etax/internal/api/handlers/invoice"
+	"etax/internal/api/handlers/license"
+	"etax/internal/api/handlers/payment"
+	"etax/internal/api/handlers/pos"
+	"etax/internal/api/handlers/subscription"
 	authSvc "etax/internal/services/auth"
 	invoiceSvc "etax/internal/services/invoice"
 	middlewareAuth "etax/internal/api/middleware/auth"
 	"etax/internal/database/models"
+	"etax/internal/config"
 )
 
 type HandlerDependencies struct {
@@ -27,182 +32,154 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB, securityService *middlewareAuth.Sec
 	
 	// Initialize handlers
 	authHandler := auth.NewAuthHandler(authService)
-	invoiceHandler := invoice.NewInvoiceHandler(invoiceService)
+	invoiceHndlr := invoice.NewInvoiceHandler(invoiceService)
+	
+	// Initialize license configuration and client
+	licenseConfig := config.LoadLicenseConfig()
+	var licenseClient *license.LicenseServerClient
+	if licenseConfig.Enabled {
+		licenseClient = license.NewLicenseServerClient(licenseConfig.ServerURL, licenseConfig.APIKey)
+	}
 
 	// Health check endpoint (no auth required)
 	r.GET("/health", HealthCheck(db))
-	r.GET("/api/health", HealthCheck(db))
 	
-	// Simple docs endpoint for browsers
-	r.GET("/api", func(c *gin.Context) {
-		c.Header("Content-Type", "text/html")
-		c.String(http.StatusOK, `<!DOCTYPE html><html><head><title>E-Tax API Documentation</title><style>body { font-family: Arial, sans-serif; margin: 40px; }.endpoint { background: #f5f5f5; padding: 20px; margin: 10px 0; border-radius: 5px; }.method { color: #007bff; font-weight: bold; }.path { color: #28a745; }</style></head><body><h1>E-Tax API Documentation</h1><p>API is running on port 8080</p><div class="endpoint"><h2>Health Check</h2><p><span class="method">GET</span> <span class="path">/health</span></p><p>Check API health status</p></div><div class="endpoint"><h2>API Health</h2><p><span class="method">GET</span> <span class="path">/api/health</span></p><p>Detailed health information</p></div><div class="endpoint"><h2>Authentication</h2><p><span class="method">POST</span> <span class="path">/api/auth/login</span></p><p>User login endpoint</p></div><div class="endpoint"><h2>Companies</h2><p><span class="method">GET</span> <span class="path">/api/companies</span></p><p>Get companies (requires auth)</p></div></body></html>`)
-	})
-
-	// Public routes (no authentication required)
-	public := r.Group("/api")
+	// API v1 group
+	v1 := r.Group("/api/v1")
 	{
-		// Authentication routes
-		public.POST("/auth/login", authHandler.Login)
-		public.POST("/auth/register", authHandler.Register)
-		public.POST("/auth/refresh", authHandler.Refresh)
-		public.POST("/auth/logout", authHandler.Logout)
-	}
+		// Documentation and Health
+		v1.GET("/docs", GetAPIDocumentation())
+		v1.GET("/health", HealthCheck(db))
 
-	// Protected routes (authentication required)
-	protected := r.Group("/api")
-	protected.Use(securityService.AuthMiddleware())
-	{
-		// User profile routes
-		protected.GET("/profile", authHandler.GetProfile)
-		protected.PUT("/profile", authHandler.UpdateProfile)
-		protected.POST("/change-password", authHandler.ChangePassword)
+		// Root info endpoint
+		v1.GET("/", func(c *gin.Context) {
+			c.Header("Content-Type", "text/html")
+			c.String(http.StatusOK, `<!DOCTYPE html><html><head><title>E-Tax API Documentation</title><style>body { font-family: Arial, sans-serif; margin: 40px; }.endpoint { background: #f5f5f5; padding: 20px; margin: 10px 0; border-radius: 5px; }.method { color: #007bff; font-weight: bold; }.path { color: #28a745; }</style></head><body><h1>E-Tax API Documentation</h1><p>API is running on port 8081</p><div class="endpoint"><h2>Health Check</h2><p><span class="method">GET</span> <span class="path">/health</span></p><p>Check API health status</p></div><div class="endpoint"><h2>API Health</h2><p><span class="method">GET</span> <span class="path">/api/v1/health</span></p><p>Detailed health information</p></div><div class="endpoint"><h2>Authentication</h2><p><span class="method">POST</span> <span class="path">/api/v1/auth/login</span></p><p>User login endpoint</p></div></body></html>`)
+		})
 
-		// Invoice routes
-		protected.GET("/invoices", invoiceHandler.GetInvoices)
-		protected.POST("/invoices", invoiceHandler.CreateInvoice)
-		protected.GET("/invoices/:id", invoiceHandler.GetInvoice)
-		protected.PUT("/invoices/:id", invoiceHandler.UpdateInvoice)
-		protected.DELETE("/invoices/:id", invoiceHandler.DeleteInvoice)
-		protected.GET("/invoices/stats", invoiceHandler.GetInvoiceStats)
-		protected.PUT("/invoices/:id/status", invoiceHandler.UpdateInvoiceStatus)
-		protected.GET("/invoices/overdue", invoiceHandler.GetOverdueInvoices)
-
-		// Company routes
-		protected.GET("/companies", GetCompanies(db))
-		protected.POST("/companies", CreateCompany(db))
-		protected.GET("/companies/:id", GetCompany(db))
-		protected.PUT("/companies/:id", UpdateCompany(db))
-		protected.DELETE("/companies/:id", DeleteCompany(db))
-
-		// Customer routes
-		protected.GET("/customers", GetCustomers(db))
-		protected.POST("/customers", CreateCustomer(db))
-		protected.GET("/customers/:id", GetCustomer(db))
-		protected.PUT("/customers/:id", UpdateCustomer(db))
-		protected.DELETE("/customers/:id", DeleteCustomer(db))
-
-		// POS vendor routes
-		protected.GET("/pos-vendors", GetPOSVendors(db))
-		protected.POST("/pos-vendors", CreatePOSVendor(db))
-		protected.GET("/pos-vendors/:id", GetPOSVendor(db))
-		protected.PUT("/pos-vendors/:id", UpdatePOSVendor(db))
-		protected.DELETE("/pos-vendors/:id", DeletePOSVendor(db))
-
-		// Marketplace integration routes
-		protected.GET("/marketplace-integrations", GetMarketplaceIntegrations(db))
-		protected.POST("/marketplace-integrations", CreateMarketplaceIntegration(db))
-		protected.GET("/marketplace-integrations/:id", GetMarketplaceIntegration(db))
-		protected.PUT("/marketplace-integrations/:id", UpdateMarketplaceIntegration(db))
-		protected.DELETE("/marketplace-integrations/:id", DeleteMarketplaceIntegration(db))
-
-		// API usage routes
-		protected.GET("/api-usage", GetAPIUsage(db))
-		protected.GET("/usage-quotas", GetUsageQuotas(db))
-
-		// Dashboard routes
-		protected.GET("/dashboard/stats", GetDashboardStats(db))
-		protected.GET("/dashboard/recent-invoices", GetRecentInvoices(db))
-		protected.GET("/dashboard/revenue", GetRevenueStats(db))
-
-		// Admin routes (admin role required)
-		adminGroup := protected.Group("/admin")
-		adminGroup.Use(securityService.RequireRole("admin"))
+		// Public authentication routes
+		authGroup := v1.Group("/auth")
 		{
-			// User management
-			adminGroup.GET("/users", GetUsers(db))
-			adminGroup.POST("/users", CreateUser(db))
-			adminGroup.GET("/users/:id", GetUser(db))
-			adminGroup.PUT("/users/:id", UpdateUser(db))
-			adminGroup.DELETE("/users/:id", DeleteUser(db))
-
-			// Company management
-			adminGroup.GET("/companies/all", GetAllCompanies(db))
-			adminGroup.POST("/companies/:id/approve", ApproveCompany(db))
-			adminGroup.POST("/companies/:id/suspend", SuspendCompany(db))
-
-			// System management
-			adminGroup.GET("/system/stats", GetSystemStats(db))
-			adminGroup.GET("/system/health", GetSystemHealth(db))
-			adminGroup.POST("/system/backup", CreateBackup(db))
-			adminGroup.GET("/audit-logs", GetAuditLogs(db))
-			adminGroup.GET("/security/settings", GetSecuritySettings(db))
-			adminGroup.PUT("/security/settings", UpdateSecuritySettings(db))
-			adminGroup.GET("/login-attempts", GetLoginAttempts(db))
+			authGroup.POST("/login", authHandler.Login)
+			authGroup.POST("/register", authHandler.Register)
+			authGroup.POST("/refresh", authHandler.Refresh)
+			authGroup.POST("/logout", authHandler.Logout)
 		}
 
-		// Monetization routes
-		protected.GET("/subscription-plans", GetSubscriptionPlans(db))
-		protected.POST("/subscriptions", CreateSubscription(db))
-		protected.GET("/subscriptions", GetUserSubscriptions(db))
-		protected.PUT("/subscriptions/:id", UpdateSubscription(db))
-		protected.DELETE("/subscriptions/:id", CancelSubscription(db))
-		protected.GET("/billing/history", GetBillingHistory(db))
-		protected.POST("/billing/process-payment", ProcessPayment(db))
+		// Protected routes (require authentication)
+		protected := v1.Group("/")
+		protected.Use(securityService.AuthMiddleware())
+		{
+			// License routes
+			licenseGroup := protected.Group("/license")
+			{
+				licenseGroup.GET("/info", license.GetCompanyLicense(db))
+				licenseGroup.POST("/validate", license.ValidateLicenseKey(db, licenseClient))
+				licenseGroup.GET("/check/:feature", license.CheckFeatureAccess(db, licenseClient))
+			}
 
-		// White-label routes
-		protected.GET("/white-label/settings", GetWhiteLabelSettings(db))
-		protected.PUT("/white-label/settings", UpdateWhiteLabelSettings(db))
-		protected.POST("/white-label/customize", CustomizeWhiteLabel(db))
+			// Profile routes
+			protected.GET("/profile", authHandler.GetProfile)
+			protected.PUT("/profile", authHandler.UpdateProfile)
+			protected.POST("/change-password", authHandler.ChangePassword)
 
-		// POS integration routes
-		protected.GET("/pos/vendors", GetPOSVendors(db))
-		protected.POST("/pos/vendors", CreatePOSVendor(db))
-		protected.PUT("/pos/vendors/:id", UpdatePOSVendor(db))
-		protected.DELETE("/pos/vendors/:id", DeletePOSVendor(db))
-		protected.GET("/pos/integrations", GetPOSIntegrations(db))
-		protected.POST("/pos/integrations", CreatePOSIntegration(db))
-		protected.PUT("/pos/integrations/:id", UpdatePOSIntegration(db))
-		protected.DELETE("/pos/integrations/:id", DeletePOSIntegration(db))
+			// Invoice routes
+			invoices := protected.Group("/invoices")
+			{
+				invoices.GET("", invoiceHndlr.GetInvoices)
+				invoices.POST("", invoiceHndlr.CreateInvoice)
+				invoices.GET("/stats", invoiceHndlr.GetInvoiceStats)
+				invoices.GET("/overdue", invoiceHndlr.GetOverdueInvoices)
+				invoices.GET("/:id", invoiceHndlr.GetInvoice)
+				invoices.PUT("/:id", invoiceHndlr.UpdateInvoice)
+				invoices.DELETE("/:id", invoiceHndlr.DeleteInvoice)
+				invoices.PUT("/:id/status", invoiceHndlr.UpdateInvoiceStatus)
+			}
 
-		// Marketplace integration routes
-		protected.GET("/marketplace/integrations", GetMarketplaceIntegrations(db))
-		protected.POST("/marketplace/integrations", CreateMarketplaceIntegration(db))
-		protected.PUT("/marketplace/integrations/:id", UpdateMarketplaceIntegration(db))
-		protected.DELETE("/marketplace/integrations/:id", DeleteMarketplaceIntegration(db))
+			// Core Data Management
+			protected.GET("/companies", GetCompanies(db))
+			protected.POST("/companies", CreateCompany(db))
+			protected.GET("/companies/:id", GetCompany(db))
+			protected.PUT("/companies/:id", UpdateCompany(db))
+			protected.DELETE("/companies/:id", DeleteCompany(db))
 
-		// Product catalog routes
-		protected.GET("/products", GetProducts(db))
-		protected.POST("/products", CreateProduct(db))
-		protected.PUT("/products/:id", UpdateProduct(db))
-		protected.DELETE("/products/:id", DeleteProduct(db))
-		protected.GET("/products/categories", GetProductCategories(db))
+			protected.GET("/customers", GetCustomers(db))
+			protected.POST("/customers", CreateCustomer(db))
+			protected.GET("/customers/:id", GetCustomer(db))
+			protected.PUT("/customers/:id", UpdateCustomer(db))
+			protected.DELETE("/customers/:id", DeleteCustomer(db))
 
-		// Recurring invoice routes
-		protected.GET("/recurring-invoices", GetRecurringInvoices(db))
-		protected.POST("/recurring-invoices", CreateRecurringInvoice(db))
-		protected.PUT("/recurring-invoices/:id", UpdateRecurringInvoice(db))
-		protected.DELETE("/recurring-invoices/:id", DeleteRecurringInvoice(db))
-		protected.POST("/recurring-invoices/:id/generate", GenerateRecurringInvoice(db))
+			protected.GET("/pos-vendors", GetPOSVendors(db))
+			protected.POST("/pos-vendors", CreatePOSVendor(db))
+			protected.GET("/pos-vendors/:id", GetPOSVendor(db))
+			protected.PUT("/pos-vendors/:id", UpdatePOSVendor(db))
+			protected.DELETE("/pos-vendors/:id", DeletePOSVendor(db))
 
-		// Payment reminder routes
-		protected.GET("/payment-reminders", GetPaymentReminders(db))
-		protected.POST("/payment-reminders", CreatePaymentReminder(db))
-		protected.PUT("/payment-reminders/:id", UpdatePaymentReminder(db))
-		protected.DELETE("/payment-reminders/:id", DeletePaymentReminder(db))
-		protected.POST("/payment-reminders/:id/send", SendPaymentReminder(db))
+			// Integrations and Usage
+			protected.GET("/marketplace-integrations", GetMarketplaceIntegrations(db))
+			protected.POST("/marketplace-integrations", CreateMarketplaceIntegration(db))
+			protected.GET("/marketplace-integrations/:id", GetMarketplaceIntegration(db))
+			protected.PUT("/marketplace-integrations/:id", UpdateMarketplaceIntegration(db))
+			protected.DELETE("/marketplace-integrations/:id", DeleteMarketplaceIntegration(db))
 
-		// Payment routes
-		protected.GET("/payments", GetPayments(db))
-		protected.POST("/payments", CreatePayment(db))
-		protected.GET("/payments/:id", GetPayment(db))
-		protected.PUT("/payments/:id", UpdatePayment(db))
-		protected.DELETE("/payments/:id", DeletePayment(db))
+			protected.GET("/api-usage", GetAPIUsage(db))
+			protected.GET("/usage-quotas", GetUsageQuotas(db))
 
-		// Invoice template routes
-		protected.GET("/invoice-templates", GetInvoiceTemplates(db))
-		protected.POST("/invoice-templates", CreateInvoiceTemplate(db))
-		protected.PUT("/invoice-templates/:id", UpdateInvoiceTemplate(db))
-		protected.DELETE("/invoice-templates/:id", DeleteInvoiceTemplate(db))
+			// Dashboard
+			dashboard := protected.Group("/dashboard")
+			{
+				dashboard.GET("/stats", GetDashboardStats(db))
+				dashboard.GET("/recent-invoices", GetRecentInvoices(db))
+				dashboard.GET("/revenue", GetRevenueStats(db))
+			}
 
-		// Performance monitoring routes
-		protected.GET("/performance/metrics", GetPerformanceMetrics(db))
-		protected.GET("/performance/health", GetPerformanceHealth(db))
-		protected.GET("/performance/logs", GetPerformanceLogs(db))
+			// Monetization and Others
+			subscription.RegisterRoutes(protected, db)
+			protected.GET("/billing/history", GetBillingHistory(db))
+			protected.POST("/billing/process-payment", ProcessPayment(db))
+			
+			protected.GET("/products", GetProducts(db))
+			protected.POST("/products", CreateProduct(db))
+			protected.PUT("/products/:id", UpdateProduct(db))
+			protected.DELETE("/products/:id", DeleteProduct(db))
+
+			// Invoice templates
+			protected.GET("/invoice-templates", GetInvoiceTemplates(db))
+			protected.POST("/invoice-templates", CreateInvoiceTemplate(db))
+			protected.PUT("/invoice-templates/:id", UpdateInvoiceTemplate(db))
+			protected.DELETE("/invoice-templates/:id", DeleteInvoiceTemplate(db))
+
+			// Payments, reminders, recurring invoices and POS/marketplace extras
+			payment.RegisterRoutes(protected, db)
+			invoice.RegisterRecurringRoutes(protected, db)
+			pos.RegisterExtraRoutes(protected, db)
+
+			// Admin routes
+			admin := protected.Group("/admin")
+			admin.Use(securityService.RequireRole("admin"))
+			{
+				admin.GET("/users", GetUsers(db))
+				admin.POST("/users", CreateUser(db))
+				admin.GET("/users/:id", GetUser(db))
+				admin.PUT("/users/:id", UpdateUser(db))
+				admin.DELETE("/users/:id", DeleteUser(db))
+
+				admin.GET("/companies/all", GetAllCompanies(db))
+				admin.POST("/companies/:id/approve", ApproveCompany(db))
+				admin.POST("/companies/:id/suspend", SuspendCompany(db))
+
+				admin.GET("/system/stats", GetSystemStats(db))
+				admin.GET("/system/health", GetSystemHealth(db))
+				admin.POST("/system/backup", CreateBackup(db))
+				admin.GET("/audit-logs", GetAuditLogs(db))
+				admin.GET("/security/settings", GetSecuritySettings(db))
+				admin.PUT("/security/settings", UpdateSecuritySettings(db))
+				admin.GET("/login-attempts", GetLoginAttempts(db))
+			}
+		}
 	}
 
-	// API documentation
-	r.GET("/api/docs", GetAPIDocumentation())
+	// Static Documentation
 	r.Static("/api/docs/static", "./docs")
 }
 
@@ -255,11 +232,6 @@ func HealthCheck(db *gorm.DB) gin.HandlerFunc {
 // Placeholder handlers for existing functionality
 // These would be implemented with proper service layer
 
-func GetCompanies(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
-func CreateCompany(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
-func GetCompany(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
-func UpdateCompany(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
-func DeleteCompany(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
 
 func GetAllCompanies(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -311,13 +283,7 @@ func GetAllCompanies(db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
-func GetCustomers(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
-func CreateCustomer(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
-func GetCustomer(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
-func UpdateCustomer(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
-func DeleteCustomer(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
 
-func GetDashboardStats(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
 func GetRecentInvoices(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
 func GetRevenueStats(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
 
@@ -670,8 +636,6 @@ func GetLoginAttempts(db *gorm.DB) gin.HandlerFunc {
 func ApproveCompany(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
 func SuspendCompany(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
 
-func GetSubscriptionPlans(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
-func CreateSubscription(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
 func GetUserSubscriptions(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
 func UpdateSubscription(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
 func CancelSubscription(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
@@ -892,10 +856,6 @@ func GetUsageQuotas(db *gorm.DB) gin.HandlerFunc {
 	}
 }
 
-func GetProducts(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
-func CreateProduct(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
-func UpdateProduct(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
-func DeleteProduct(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
 func GetProductCategories(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
 
 func GetRecurringInvoices(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
@@ -916,10 +876,6 @@ func GetPayment(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
 func UpdatePayment(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
 func DeletePayment(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
 
-func GetInvoiceTemplates(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
-func CreateInvoiceTemplate(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
-func UpdateInvoiceTemplate(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
-func DeleteInvoiceTemplate(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
 
 func GetPerformanceMetrics(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }
 func GetPerformanceHealth(db *gorm.DB) gin.HandlerFunc { return placeholderHandler }

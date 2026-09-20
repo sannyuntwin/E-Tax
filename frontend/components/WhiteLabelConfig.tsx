@@ -45,7 +45,7 @@ export default function WhiteLabelConfig({ onSave }: WhiteLabelConfigProps) {
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState<'success' | 'error'>('success')
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8081'
 
   useEffect(() => {
     fetchWhiteLabelConfig()
@@ -54,7 +54,7 @@ export default function WhiteLabelConfig({ onSave }: WhiteLabelConfigProps) {
   const fetchWhiteLabelConfig = async () => {
     setLoading(true)
     try {
-      const response = await fetch(`${API_BASE}/api/white-label`, {
+      const response = await fetch(`${API_BASE}/api/v1/white-label`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
@@ -77,7 +77,7 @@ export default function WhiteLabelConfig({ onSave }: WhiteLabelConfigProps) {
   const handleSave = async () => {
     setSaving(true)
     try {
-      const response = await fetch(`${API_BASE}/api/white-label`, {
+      const response = await fetch(`${API_BASE}/api/v1/white-label`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,

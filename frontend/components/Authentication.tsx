@@ -18,7 +18,7 @@ interface User {
 }
 
 interface LoginData {
-  username: string
+  email: string
   password: string
 }
 
@@ -49,12 +49,12 @@ export default function Authentication({ onSuccess }: AuthenticationProps = {}) 
   const [loading, setLoading] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [showProfile, setShowProfile] = useState(false)
-  
-  const [loginData, setLoginData] = useState<LoginData>({ username: '', password: '' })
+
+  const [loginData, setLoginData] = useState<LoginData>({ email: '', password: '' })
   const [registerData, setRegisterData] = useState<RegisterData>({ username: '', email: '', password: '', first_name: '', last_name: '' })
   const [profileData, setProfileData] = useState<ProfileData>({ name: '', email: '' })
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8081'
 
   useEffect(() => {
     checkAuth()
@@ -64,7 +64,7 @@ export default function Authentication({ onSuccess }: AuthenticationProps = {}) 
     const token = localStorage.getItem('access_token')
     if (token) {
       try {
-        const response = await fetch(`${API_BASE}/api/profile`, {
+        const response = await fetch(`${API_BASE}/api/v1/profile`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -84,9 +84,9 @@ export default function Authentication({ onSuccess }: AuthenticationProps = {}) 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    
+
     try {
-      const response = await fetch(`${API_BASE}/api/auth/login`, {
+      const response = await fetch(`${API_BASE}/api/v1/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -119,9 +119,9 @@ export default function Authentication({ onSuccess }: AuthenticationProps = {}) 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    
+
     try {
-      const response = await fetch(`${API_BASE}/api/auth/register`, {
+      const response = await fetch(`${API_BASE}/api/v1/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -153,9 +153,9 @@ export default function Authentication({ onSuccess }: AuthenticationProps = {}) 
 
   const handleLogout = async () => {
     const token = localStorage.getItem('access_token')
-    
+
     try {
-      await fetch(`${API_BASE}/api/auth/logout`, {
+      await fetch(`${API_BASE}/api/v1/auth/logout`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -164,7 +164,7 @@ export default function Authentication({ onSuccess }: AuthenticationProps = {}) 
     } catch (error) {
       console.error('Logout error:', error)
     }
-    
+
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     setUser(null)
@@ -175,9 +175,9 @@ export default function Authentication({ onSuccess }: AuthenticationProps = {}) 
     e.preventDefault()
     setLoading(true)
     const token = localStorage.getItem('access_token')
-    
+
     try {
-      const response = await fetch(`${API_BASE}/api/profile`, {
+      const response = await fetch(`${API_BASE}/api/v1/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -207,9 +207,9 @@ export default function Authentication({ onSuccess }: AuthenticationProps = {}) 
     e.preventDefault()
     setLoading(true)
     const token = localStorage.getItem('access_token')
-    
+
     try {
-      const response = await fetch(`${API_BASE}/api/change-password`, {
+      const response = await fetch(`${API_BASE}/api/v1/change-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -238,9 +238,9 @@ export default function Authentication({ onSuccess }: AuthenticationProps = {}) 
 
   const refreshToken = async () => {
     const refreshToken = localStorage.getItem('refresh_token')
-    
+
     try {
-      const response = await fetch(`${API_BASE}/api/auth/refresh`, {
+      const response = await fetch(`${API_BASE}/api/v1/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -457,19 +457,19 @@ export default function Authentication({ onSuccess }: AuthenticationProps = {}) 
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Username</label>
+            <label className="block text-sm font-medium text-gray-700">Email</label>
             <div className="relative">
               <input
-                type="text"
-                value={isLogin ? loginData.username : registerData.username}
-                onChange={(e) => isLogin 
-                  ? setLoginData({ ...loginData, username: e.target.value })
-                  : setRegisterData({ ...registerData, username: e.target.value })
+                type="email"
+                value={isLogin ? loginData.email : registerData.email}
+                onChange={(e) => isLogin
+                  ? setLoginData({ ...loginData, email: e.target.value })
+                  : setRegisterData({ ...registerData, email: e.target.value })
                 }
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border pl-10"
                 required
               />
-              <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             </div>
           </div>
 

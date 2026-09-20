@@ -47,7 +47,7 @@ export default function BillingManagement({ onAddPaymentMethod, onUpgradePlan }:
   const [activeTab, setActiveTab] = useState<'invoices' | 'payment-methods'>('invoices')
   const [statusFilter, setStatusFilter] = useState<string>('')
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8081'
 
   const confirmAction = (message: string): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -87,12 +87,12 @@ export default function BillingManagement({ onAddPaymentMethod, onUpgradePlan }:
   const fetchBillingData = async () => {
     try {
       const [invoicesRes, paymentMethodsRes] = await Promise.all([
-        fetch(`${API_BASE}/api/billing-invoices${statusFilter ? `?status=${statusFilter}` : ''}`, {
+        fetch(`${API_BASE}/api/v1/billing-invoices${statusFilter ? `?status=${statusFilter}` : ''}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           },
         }),
-        fetch(`${API_BASE}/api/payment-methods`, {
+        fetch(`${API_BASE}/api/v1/payment-methods`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           },
@@ -164,7 +164,7 @@ export default function BillingManagement({ onAddPaymentMethod, onUpgradePlan }:
 
   const downloadInvoice = async (invoiceId: number) => {
     try {
-      const response = await fetch(`${API_BASE}/api/billing-invoices/${invoiceId}/download`, {
+      const response = await fetch(`${API_BASE}/api/v1/billing-invoices/${invoiceId}/download`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
@@ -188,7 +188,7 @@ export default function BillingManagement({ onAddPaymentMethod, onUpgradePlan }:
 
   const setDefaultPaymentMethod = async (paymentMethodId: number) => {
     try {
-      const response = await fetch(`${API_BASE}/api/payment-methods/${paymentMethodId}/set-default`, {
+      const response = await fetch(`${API_BASE}/api/v1/payment-methods/${paymentMethodId}/set-default`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
@@ -207,7 +207,7 @@ export default function BillingManagement({ onAddPaymentMethod, onUpgradePlan }:
   const deletePaymentMethod = async (paymentMethodId: number) => {
     if (await confirmAction('Are you sure you want to delete this payment method?')) {
       try {
-        const response = await fetch(`${API_BASE}/api/payment-methods/${paymentMethodId}`, {
+        const response = await fetch(`${API_BASE}/api/v1/payment-methods/${paymentMethodId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('access_token')}`,

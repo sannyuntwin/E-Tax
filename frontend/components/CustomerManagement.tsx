@@ -44,7 +44,7 @@ export default function CustomerManagement() {
     notes: ''
   })
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8081'
   const token = localStorage.getItem('access_token')
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function CustomerManagement() {
 
   const fetchCustomers = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/customers`, {
+      const response = await fetch(`${API_BASE}/api/v1/customers`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -77,8 +77,8 @@ export default function CustomerManagement() {
 
     try {
       const url = editingCustomer 
-        ? `${API_BASE}/api/customers/${editingCustomer.id}`
-        : `${API_BASE}/api/customers`
+        ? `${API_BASE}/api/v1/customers/${editingCustomer.id}`
+        : `${API_BASE}/api/v1/customers`
       
       const method = editingCustomer ? 'PUT' : 'POST'
 
@@ -133,7 +133,7 @@ export default function CustomerManagement() {
     if (!confirm('Are you sure you want to delete this customer?')) return
 
     try {
-      const response = await fetch(`${API_BASE}/api/customers/${id}`, {
+      const response = await fetch(`${API_BASE}/api/v1/customers/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -154,7 +154,7 @@ export default function CustomerManagement() {
 
   const handleView = async (id: number) => {
     try {
-      const response = await fetch(`${API_BASE}/api/customers/${id}`, {
+      const response = await fetch(`${API_BASE}/api/v1/customers/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

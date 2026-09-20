@@ -37,7 +37,7 @@ export default function PaymentReminders() {
     message: ''
   })
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8081'
   const token = localStorage.getItem('access_token')
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export default function PaymentReminders() {
 
   const fetchReminders = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/payment-reminders`, {
+      const response = await fetch(`${API_BASE}/api/v1/payment-reminders`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -70,8 +70,8 @@ export default function PaymentReminders() {
 
     try {
       const url = editingReminder 
-        ? `${API_BASE}/api/payment-reminders/${editingReminder.id}`
-        : `${API_BASE}/api/payment-reminders`
+        ? `${API_BASE}/api/v1/payment-reminders/${editingReminder.id}`
+        : `${API_BASE}/api/v1/payment-reminders`
       
       const method = editingReminder ? 'PUT' : 'POST'
 
@@ -123,7 +123,7 @@ export default function PaymentReminders() {
     if (!confirm('Are you sure you want to delete this payment reminder?')) return
 
     try {
-      const response = await fetch(`${API_BASE}/api/payment-reminders/${id}`, {
+      const response = await fetch(`${API_BASE}/api/v1/payment-reminders/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -144,7 +144,7 @@ export default function PaymentReminders() {
 
   const handleSend = async (id: number) => {
     try {
-      const response = await fetch(`${API_BASE}/api/payment-reminders/${id}/send`, {
+      const response = await fetch(`${API_BASE}/api/v1/payment-reminders/${id}/send`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

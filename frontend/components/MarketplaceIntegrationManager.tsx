@@ -58,7 +58,7 @@ const MarketplaceIntegrationManager: React.FC = () => {
   const fetchIntegrations = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/api/marketplace-integrations');
+      const response = await apiClient.get('/api/v1/marketplace-integrations');
 
       if (!response.ok) throw new Error('Failed to fetch marketplace integrations');
 
@@ -75,17 +75,17 @@ const MarketplaceIntegrationManager: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const url = editingIntegration 
-        ? `/api/marketplace-integrations/${editingIntegration.id}`
-        : '/api/marketplace-integrations';
-      
+      const url = editingIntegration
+        ? `/api/v1/marketplace-integrations/${editingIntegration.id}`
+        : '/api/v1/marketplace-integrations';
+
       const method = editingIntegration ? 'PUT' : 'POST';
-      
+
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
         body: JSON.stringify(formData),
       });
@@ -106,10 +106,10 @@ const MarketplaceIntegrationManager: React.FC = () => {
   const handleTest = async (integrationId: number) => {
     try {
       setTestingIntegration(integrationId);
-      const response = await fetch(`/api/marketplace-integrations/${integrationId}/test`, {
+      const response = await fetch(`/api/v1/marketplace-integrations/${integrationId}/test`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
       });
 
@@ -128,10 +128,10 @@ const MarketplaceIntegrationManager: React.FC = () => {
 
   const handleDisable = async (integrationId: number) => {
     try {
-      const response = await fetch(`/api/marketplace-integrations/${integrationId}/disable`, {
+      const response = await fetch(`/api/v1/marketplace-integrations/${integrationId}/disable`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
       });
 
@@ -226,21 +226,21 @@ const MarketplaceIntegrationManager: React.FC = () => {
           <div className="text-sm font-medium text-gray-600">Total Integrations</div>
           <div className="text-2xl font-bold text-gray-900">{integrations.length}</div>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="text-sm font-medium text-gray-600">Active</div>
           <div className="text-2xl font-bold text-green-600">
             {integrations.filter(i => i.is_active).length}
           </div>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="text-sm font-medium text-gray-600">Syncing</div>
           <div className="text-2xl font-bold text-blue-600">
             {integrations.filter(i => i.sync_status === 'success').length}
           </div>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="text-sm font-medium text-gray-600">Platforms</div>
           <div className="text-2xl font-bold text-purple-600">
@@ -312,9 +312,8 @@ const MarketplaceIntegrationManager: React.FC = () => {
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(integration.sync_status)}`}>
                           {integration.sync_status}
                         </span>
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          integration.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                        }`}>
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${integration.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
                           {integration.is_active ? 'Active' : 'Inactive'}
                         </span>
                       </div>
@@ -440,7 +439,7 @@ const MarketplaceIntegrationManager: React.FC = () => {
             <h2 className="text-xl font-bold mb-4">
               {editingIntegration ? 'Edit Integration' : 'Add New Integration'}
             </h2>
-            
+
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
                 <div>

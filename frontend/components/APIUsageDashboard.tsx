@@ -47,7 +47,7 @@ const APIUsageDashboard: React.FC = () => {
   const fetchUsage = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get(`/api/api-usage?period=${selectedPeriod}`);
+      const response = await apiClient.get(`/api/v1/api-usage?period=${selectedPeriod}`);
 
       if (!response.ok) throw new Error('Failed to fetch API usage');
 
@@ -63,7 +63,7 @@ const APIUsageDashboard: React.FC = () => {
 
   const fetchQuotas = async () => {
     try {
-      const response = await apiClient.get('/api/usage-quotas');
+      const response = await apiClient.get('/api/v1/usage-quotas');
 
       if (!response.ok) throw new Error('Failed to fetch usage quotas');
 

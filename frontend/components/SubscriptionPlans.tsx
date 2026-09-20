@@ -28,7 +28,7 @@ export default function SubscriptionPlans({ onSelectPlan, currentPlan }: Subscri
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
   const [loading, setLoading] = useState(true)
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8081'
 
   useEffect(() => {
     fetchSubscriptionPlans()
@@ -36,7 +36,7 @@ export default function SubscriptionPlans({ onSelectPlan, currentPlan }: Subscri
 
   const fetchSubscriptionPlans = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/subscription-plans`)
+      const response = await fetch(`${API_BASE}/api/v1/subscription-plans`)
       if (response.ok) {
         const data = await response.json()
         // Filter by billing cycle

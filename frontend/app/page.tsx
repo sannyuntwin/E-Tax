@@ -5,7 +5,7 @@ import {
   Plus, FileText, Download, Eye, Trash2, Edit, BarChart3, HelpCircle, RefreshCw, 
   Building2, Users, Package, CreditCard, Bell, Settings, Shield, Activity,
   Globe, ShoppingCart, Database, TrendingUp, Lock, UserCheck, Server,
-  ChevronDown, Menu, X, ArrowLeft
+  ChevronDown, Menu, X, ArrowLeft, Key, Crown
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -21,6 +21,9 @@ import MarketplaceIntegrationManager from '@/components/MarketplaceIntegrationMa
 import ProductCatalogManagement from '@/components/ProductCatalogManagement'
 import SystemHealthMonitor from '@/components/SystemHealthMonitor'
 import APIUsageDashboard from '@/components/APIUsageDashboard'
+import LicenseManagement from '@/components/LicenseManagement'
+import LicenseUpgrade from '@/components/LicenseUpgrade'
+import LicenseStatus from '@/components/LicenseStatus'
 
 // Import existing components
 import InvoiceForm from '@/components/InvoiceForm'
@@ -56,6 +59,8 @@ interface User {
 type ViewType = 
   | 'dashboard' 
   | 'invoices' 
+  | 'license-management'
+  | 'license-upgrade'
   | 'admin-users'
   | 'admin-audit-logs'
   | 'admin-security'
@@ -82,6 +87,10 @@ const navigationItems: NavigationItem[] = [
   // Main Navigation
   { id: 'dashboard', label: 'Dashboard', icon: BarChart3, category: 'main' },
   { id: 'invoices', label: 'Invoices', icon: FileText, category: 'main' },
+  
+  // License Management
+  { id: 'license-management', label: 'License Management', icon: Key, category: 'license' },
+  { id: 'license-upgrade', label: 'Upgrade License', icon: Crown, category: 'license' },
   
   // Product & Template Management
   { id: 'product-catalog', label: 'Product Catalog', icon: Package, category: 'products' },
@@ -124,7 +133,7 @@ function AppContent({ user }: { user: User }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [userRole, setUserRole] = useState<'user' | 'admin'>('user')
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8081'
 
   // Set user role based on authenticated user
   useEffect(() => {
@@ -199,7 +208,7 @@ function AppContent({ user }: { user: User }) {
 
   const fetchRecurringInvoices = async () => {
     try {
-      const response = await apiClient.get('/api/recurring-invoices')
+      const response = await apiClient.get('/api/v1/recurring-invoices')
       
       if (response.status === 404) {
         // Endpoint not implemented - set empty array
@@ -216,7 +225,7 @@ function AppContent({ user }: { user: User }) {
 
   const handleCreateRecurringInvoice = async (recurringData: any) => {
     try {
-      const response = await apiClient.post('/api/recurring-invoices', JSON.stringify(recurringData))
+      const response = await apiClient.post('/api/v1/recurring-invoices', JSON.stringify(recurringData))
       
       if (response.status === 404) {
         toast.error('Recurring invoices feature not available')
@@ -240,7 +249,7 @@ function AppContent({ user }: { user: User }) {
     if (!editingRecurring) return
 
     try {
-      const response = await apiClient.put(`/api/recurring-invoices/${editingRecurring.id}`, JSON.stringify(recurringData))
+      const response = await apiClient.put(`/api/v1/recurring-invoices/${editingRecurring.id}`, JSON.stringify(recurringData))
       
       if (response.status === 404) {
         toast.error('Recurring invoices feature not available')
@@ -263,7 +272,7 @@ function AppContent({ user }: { user: User }) {
   const handleDeleteRecurringInvoice = async (id: number) => {
     if (await confirmAction('Are you sure you want to delete this recurring invoice? This will stop all future invoice generation.')) {
       try {
-        const response = await fetch(`${API_BASE}/api/recurring-invoices/${id}`, {
+        const response = await fetch(`${API_BASE}/api/v1/recurring-invoices/${id}`, {
           method: 'DELETE',
         })
 
@@ -283,7 +292,7 @@ function AppContent({ user }: { user: User }) {
   const handleGenerateInvoice = async (id: number) => {
     if (await confirmAction('Generate next invoice from this recurring schedule?')) {
       try {
-        const response = await fetch(`${API_BASE}/api/recurring-invoices/${id}/generate`, {
+        const response = await fetch(`${API_BASE}/api/v1/recurring-invoices/${id}/generate`, {
           method: 'POST',
         })
 
@@ -305,7 +314,7 @@ function AppContent({ user }: { user: User }) {
 
   const handlePauseRecurringInvoice = async (id: number) => {
     try {
-      const response = await fetch(`${API_BASE}/api/recurring-invoices/${id}/pause`, {
+      const response = await fetch(`${API_BASE}/api/v1/recurring-invoices/${id}/pause`, {
         method: 'POST',
       })
 
@@ -319,7 +328,7 @@ function AppContent({ user }: { user: User }) {
 
   const handleResumeRecurringInvoice = async (id: number) => {
     try {
-      const response = await fetch(`${API_BASE}/api/recurring-invoices/${id}/resume`, {
+      const response = await fetch(`${API_BASE}/api/v1/recurring-invoices/${id}/resume`, {
         method: 'POST',
       })
 
@@ -334,8 +343,8 @@ function AppContent({ user }: { user: User }) {
   const fetchData = async () => {
     try {
       const [companiesRes, customersRes] = await Promise.all([
-        apiClient.get('/api/companies'),
-        apiClient.get('/api/customers')
+        apiClient.get('/api/v1/companies'),
+        apiClient.get('/api/v1/customers')
       ])
 
       if (companiesRes.ok && customersRes.ok) {
@@ -381,8 +390,8 @@ function AppContent({ user }: { user: User }) {
       })
 
       const endpoint = params.toString() 
-        ? `/api/invoices/search?${params}`
-        : `/api/invoices`
+        ? `/api/v1/invoices/search?${params}`
+        : `/api/v1/invoices`
 
       const response = await apiClient.get(endpoint)
       if (response.ok) {
@@ -436,7 +445,7 @@ function AppContent({ user }: { user: User }) {
 
   const handleCreateInvoice = async (invoiceData: Partial<Invoice>) => {
     try {
-      const response = await apiClient.post('/api/invoices', invoiceData)
+      const response = await apiClient.post('/api/v1/invoices', invoiceData)
 
       if (response.ok) {
         const newInvoice = await response.json()
@@ -451,7 +460,7 @@ function AppContent({ user }: { user: User }) {
 
   const handleSaveDraft = async (invoiceData: Partial<Invoice>) => {
     try {
-      const response = await fetch(`${API_BASE}/api/invoices/draft`, {
+      const response = await fetch(`${API_BASE}/api/v1/invoices/draft`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -472,7 +481,7 @@ function AppContent({ user }: { user: User }) {
     if (!editingInvoice) return
 
     try {
-      const response = await fetch(`${API_BASE}/api/invoices/${editingInvoice.id}`, {
+      const response = await fetch(`${API_BASE}/api/v1/invoices/${editingInvoice.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -494,7 +503,7 @@ function AppContent({ user }: { user: User }) {
   const handleDeleteInvoice = async (id: number) => {
     if (await confirmAction('Are you sure you want to delete this invoice?')) {
       try {
-        const response = await fetch(`${API_BASE}/api/invoices/${id}`, {
+        const response = await fetch(`${API_BASE}/api/v1/invoices/${id}`, {
           method: 'DELETE',
         })
 
@@ -513,7 +522,7 @@ function AppContent({ user }: { user: User }) {
 
   const downloadPDF = async (id: number, invoiceNo: string) => {
     try {
-      const response = await fetch(`${API_BASE}/api/invoices/${id}/pdf`)
+      const response = await fetch(`${API_BASE}/api/v1/invoices/${id}/pdf`)
       if (response.ok) {
         const blob = await response.blob()
         const url = window.URL.createObjectURL(blob)
@@ -532,7 +541,7 @@ function AppContent({ user }: { user: User }) {
 
   const downloadXML = async (id: number, invoiceNo: string) => {
     try {
-      const response = await fetch(`${API_BASE}/api/invoices/${id}/xml`)
+      const response = await fetch(`${API_BASE}/api/v1/invoices/${id}/xml`)
       if (response.ok) {
         const blob = await response.blob()
         const url = window.URL.createObjectURL(blob)
@@ -612,6 +621,12 @@ function AppContent({ user }: { user: User }) {
           </div>
         )
       
+      case 'license-management':
+        return <LicenseManagement />
+      
+      case 'license-upgrade':
+        return <LicenseUpgrade onUpgrade={(plan) => console.log('Upgrade to:', plan)} />
+      
       case 'admin-users':
         return <AdminUserManagement />
       
@@ -682,46 +697,22 @@ function AppContent({ user }: { user: User }) {
   return (
     <ThemeProvider>
       <div className="min-h-screen bg-gray-50 flex">
-        {/* Sidebar */}
-        <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
-          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
-            <h1 className="h1 text-blue-600">E-Tax</h1>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 rounded-md hover:bg-gray-100"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          
-          <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
-            {Object.entries(groupedNavigation).map(([category, items]) => (
-              <div key={category}>
-                <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                  {category.charAt(0).toUpperCase() + category.slice(1)}
-                </h3>
-                <div className="space-y-1">
-                  {items.map((item) => {
+        {/* Sidebar - Desktop */}
+        <div className="flex flex-shrink-0">
+          <div className="flex flex-col w-64">
+            <div className="flex flex-col flex-grow bg-white border-r border-gray-200 overflow-y-auto">
+              <div className="flex items-center flex-shrink-0 px-4 py-4">
+                <h1 className="text-xl font-bold text-blue-600">E-Tax</h1>
+              </div>
+              <div className="flex-1 flex flex-col">
+                <nav className="flex-1 px-2 space-y-1">
+                  {filteredNavigationItems.map((item) => {
                     const Icon = item.icon
                     return (
                       <button
                         key={item.id}
-                        onClick={() => {
-                          if (item.id === 'product-catalog') {
-                            setCurrentView('product-catalog')
-                            setSidebarOpen(false)
-                          } else if (item.id === 'invoice-templates') {
-                            setCurrentView('invoice-templates')
-                            setSidebarOpen(false)
-                          } else if (item.id === 'recurring-invoices') {
-                            setCurrentView('recurring-invoices')
-                            setSidebarOpen(false)
-                          } else {
-                            setCurrentView(item.id)
-                            setSidebarOpen(false)
-                          }
-                        }}
-                        className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                        onClick={() => setCurrentView(item.id)}
+                        className={`group w-full flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
                           currentView === item.id
                             ? 'bg-blue-100 text-blue-700'
                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -732,81 +723,99 @@ function AppContent({ user }: { user: User }) {
                       </button>
                     )
                   })}
-                </div>
+                </nav>
               </div>
-            ))}
-          </nav>
+            </div>
+          </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          {/* Header */}
+        {/* Main Content Area */}
+        <div className="flex flex-col flex-1 overflow-hidden">
+          {/* Top Header */}
           <header className="bg-white shadow-sm border-b border-gray-200">
-            <div className="px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center h-16">
-                <div className="flex items-center">
-                  <button
-                    onClick={() => setSidebarOpen(true)}
-                    className="lg:hidden p-2 rounded-md hover:bg-gray-100 mr-4"
-                  >
-                    <Menu className="h-5 w-5" />
-                  </button>
-                  
-                  {/* Back button for non-main views */}
-                  {currentView !== 'dashboard' && currentView !== 'invoices' && currentView !== 'product-catalog' && currentView !== 'invoice-templates' && currentView !== 'recurring-invoices' && (
-                    <button
-                      onClick={() => setCurrentView('dashboard')}
-                      className="p-2 rounded-md hover:bg-gray-100 mr-4 flex items-center text-gray-600 hover:text-gray-900"
-                      title="Back to Dashboard"
-                    >
-                      <ArrowLeft className="h-5 w-5 mr-1" />
-                      Back
-                    </button>
-                  )}
-                  
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    {navigationItems.find(item => item.id === currentView)?.label || 'Dashboard'}
-                  </h2>
-                </div>
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center">
+                <button
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="lg:hidden p-2 rounded-md hover:bg-gray-100 mr-4"
+                >
+                  <Menu className="h-5 w-5" />
+                </button>
                 
-                <div className="flex items-center space-x-4">
-                  <DarkModeToggle />
-                  <KeyboardShortcuts
-                    onCreateInvoice={() => {
-                      setShowForm(true)
-                      setCurrentView('invoices')
-                    }}
-                    onSaveDraft={() => {
-                      if (showForm) {
-                        const form = document.querySelector('form') as HTMLFormElement
-                        if (form) {
-                          const formData = new FormData(form)
-                          console.log('Saving draft...', Object.fromEntries(formData))
-                        }
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {navigationItems.find(item => item.id === currentView)?.label || 'Dashboard'}
+                </h2>
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <DarkModeToggle />
+                <KeyboardShortcuts
+                  onCreateInvoice={() => {
+                    setShowForm(true)
+                    setCurrentView('invoices')
+                  }}
+                  onSaveDraft={() => {
+                    if (showForm) {
+                      const form = document.querySelector('form') as HTMLFormElement
+                      if (form) {
+                        const formData = new FormData(form)
+                        console.log('Saving draft...', Object.fromEntries(formData))
                       }
-                    }}
-                    onSearch={focusSearch}
-                    onToggleDarkMode={toggleDarkMode}
-                    onExportData={exportData}
-                  />
-                  <button
-                    className="btn btn-sm btn-ghost"
-                    title="Help"
-                  >
-                    <HelpCircle className="h-4 w-4" />
-                  </button>
-                </div>
+                    }
+                  }}
+                />
               </div>
             </div>
           </header>
 
-          {/* Main Content Area */}
-          <main className="flex-1 overflow-auto">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Main Content */}
+          <main className="flex-1 relative overflow-y-auto">
+            <div className="p-8">
               {renderCurrentView()}
             </div>
           </main>
         </div>
+
+        {/* Mobile Sidebar */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-50 md:hidden">
+            <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)} />
+            <div className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg">
+              <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
+                <h1 className="text-xl font-bold text-blue-600">E-Tax</h1>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="p-2 rounded-md hover:bg-gray-100"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              
+              <nav className="px-4 py-6 space-y-2">
+                {filteredNavigationItems.map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setCurrentView(item.id)
+                        setSidebarOpen(false)
+                      }}
+                      className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                        currentView === item.id
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4 mr-3" />
+                      {item.label}
+                    </button>
+                  )
+                })}
+              </nav>
+            </div>
+          </div>
+        )}
 
         {/* Modals */}
         {showForm && (

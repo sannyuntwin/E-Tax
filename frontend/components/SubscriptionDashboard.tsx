@@ -56,7 +56,7 @@ export default function SubscriptionDashboard({ onUpgradePlan, onManageBilling, 
   const [quotas, setQuotas] = useState<UsageQuota[]>([])
   const [loading, setLoading] = useState(true)
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8081'
 
   useEffect(() => {
     fetchSubscriptionData()
@@ -65,12 +65,12 @@ export default function SubscriptionDashboard({ onUpgradePlan, onManageBilling, 
   const fetchSubscriptionData = async () => {
     try {
       const [subscriptionRes, quotasRes] = await Promise.all([
-        fetch(`${API_BASE}/api/subscription`, {
+        fetch(`${API_BASE}/api/v1/subscription`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           },
         }),
-        fetch(`${API_BASE}/api/usage-quotas`, {
+        fetch(`${API_BASE}/api/v1/usage-quotas`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
           },

@@ -41,7 +41,7 @@ const AdminAuditLogs: React.FC = () => {
         ...(filters.user_id && { user_id: filters.user_id }),
       });
 
-      const response = await apiClient.get(`/api/admin/audit-logs?${params}`);
+      const response = await apiClient.get(`/api/v1/admin/audit-logs?${params}`);
 
       if (!response.ok) throw new Error('Failed to fetch audit logs');
 

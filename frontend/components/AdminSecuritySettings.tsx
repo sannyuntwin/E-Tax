@@ -47,7 +47,7 @@ const AdminSecuritySettings: React.FC = () => {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/api/admin/security/settings');
+      const response = await apiClient.get('/api/v1/admin/security/settings');
 
       if (!response.ok) throw new Error('Failed to fetch security settings');
 
@@ -73,7 +73,7 @@ const AdminSecuritySettings: React.FC = () => {
         ip_whitelist: JSON.stringify(ipList),
       };
 
-      const response = await apiClient.put('/api/admin/security/settings', updatedSettings);
+      const response = await apiClient.put('/api/v1/admin/security/settings', updatedSettings);
 
       if (!response.ok) throw new Error('Failed to update security settings');
 

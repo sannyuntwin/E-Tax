@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import apiClient from '@/utils/api';
+import { hasFeature, isLicenseActive } from '../utils/license';
 
 interface Product {
   id: number;
@@ -41,7 +42,7 @@ const ProductCatalogManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
   const [pageSize] = useState(20);
-  
+
   // Ensure products is always an array
   const productsArray = Array.isArray(products) ? products : [];
   const [formData, setFormData] = useState<ProductFormData>({
@@ -81,7 +82,7 @@ const ProductCatalogManagement: React.FC = () => {
         ...(selectedCategory && { category: selectedCategory }),
       });
 
-      const response = await apiClient.get(`/api/products?${params}`);
+      const response = await apiClient.get(`/api/v1/products?${params}`);
 
       if (response.status === 404) {
         // Products endpoint not implemented - show empty state
@@ -106,17 +107,17 @@ const ProductCatalogManagement: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const url = editingProduct 
-        ? `/api/products/${editingProduct.id}`
-        : '/api/products';
-      
+      const url = editingProduct
+        ? `/api/v1/products/${editingProduct.id}`
+        : '/api/v1/products';
+
       const method = editingProduct ? 'PUT' : 'POST';
-      
+
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
         body: JSON.stringify(formData),
       });
@@ -138,10 +139,10 @@ const ProductCatalogManagement: React.FC = () => {
     if (!confirm('Are you sure you want to delete this product?')) return;
 
     try {
-      const response = await fetch(`/api/products/${productId}`, {
+      const response = await fetch(`/api/v1/products/${productId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
       });
 
@@ -216,11 +217,15 @@ const ProductCatalogManagement: React.FC = () => {
           </button>
           <button
             onClick={() => {
+              if (!isLicenseActive()) {
+                toast.error('License not active. Please activate your license to add products.');
+                return;
+              }
               resetForm();
               setEditingProduct(null);
               setIsModalOpen(true);
             }}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+            className={`${!isLicenseActive() ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'} text-white px-4 py-2 rounded-lg transition-colors`}
           >
             Add Product
           </button>
@@ -233,25 +238,25 @@ const ProductCatalogManagement: React.FC = () => {
           <div className="text-sm font-medium text-gray-600">Total Products</div>
           <div className="text-2xl font-bold text-gray-900">{productsArray.length}</div>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="text-sm font-medium text-gray-600">Active</div>
           <div className="text-2xl font-bold text-green-600">
             {productsArray.filter(p => p.is_active).length}
           </div>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="text-sm font-medium text-gray-600">Categories</div>
           <div className="text-2xl font-bold text-purple-600">
             {new Set(productsArray.map(p => p.category)).size}
           </div>
         </div>
-        
+
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="text-sm font-medium text-gray-600">Avg Price</div>
           <div className="text-2xl font-bold text-blue-600">
-            {productsArray.length > 0 
+            {productsArray.length > 0
               ? formatCurrency(productsArray.reduce((sum, p) => sum + p.price, 0) / productsArray.length)
               : '$0'
             }
@@ -374,11 +379,10 @@ const ProductCatalogManagement: React.FC = () => {
                       {formatCurrency(product.cost)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className={`font-semibold ${
-                        calculateProfit(product.price, product.cost) >= 0 
-                          ? 'text-green-600' 
-                          : 'text-red-600'
-                      }`}>
+                      <div className={`font-semibold ${calculateProfit(product.price, product.cost) >= 0
+                        ? 'text-green-600'
+                        : 'text-red-600'
+                        }`}>
                         {formatCurrency(calculateProfit(product.price, product.cost))}
                       </div>
                       <div className="text-xs text-gray-500">
@@ -386,24 +390,22 @@ const ProductCatalogManagement: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className={`font-semibold ${
-                        product.stock_quantity > 10 
-                          ? 'text-green-600' 
-                          : product.stock_quantity > 0 
-                            ? 'text-yellow-600'
-                            : 'text-red-600'
-                      }`}>
+                      <div className={`font-semibold ${product.stock_quantity > 10
+                        ? 'text-green-600'
+                        : product.stock_quantity > 0
+                          ? 'text-yellow-600'
+                          : 'text-red-600'
+                        }`}>
                         {product.stock_quantity}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {product.stock_quantity > 10 ? 'In Stock' : 
-                         product.stock_quantity > 0 ? 'Low Stock' : 'Out of Stock'}
+                        {product.stock_quantity > 10 ? 'In Stock' :
+                          product.stock_quantity > 0 ? 'Low Stock' : 'Out of Stock'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        product.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${product.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
                         {product.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
@@ -478,7 +480,7 @@ const ProductCatalogManagement: React.FC = () => {
             <h2 className="text-xl font-bold mb-4">
               {editingProduct ? 'Edit Product' : 'Create New Product'}
             </h2>
-            
+
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -618,11 +620,10 @@ const ProductCatalogManagement: React.FC = () => {
                     <div className="text-sm text-gray-600">
                       <div className="flex justify-between">
                         <span>Profit:</span>
-                        <span className={`font-semibold ${
-                          calculateProfit(formData.price, formData.cost) >= 0 
-                            ? 'text-green-600' 
-                            : 'text-red-600'
-                        }`}>
+                        <span className={`font-semibold ${calculateProfit(formData.price, formData.cost) >= 0
+                          ? 'text-green-600'
+                          : 'text-red-600'
+                          }`}>
                           {formatCurrency(calculateProfit(formData.price, formData.cost))}
                         </span>
                       </div>

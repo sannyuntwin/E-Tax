@@ -40,7 +40,7 @@ export default function PaymentManagement() {
     notes: ''
   })
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8081'
   const token = localStorage.getItem('access_token')
 
   useEffect(() => {
@@ -49,7 +49,7 @@ export default function PaymentManagement() {
 
   const fetchPayments = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/payments`, {
+      const response = await fetch(`${API_BASE}/api/v1/payments`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -73,8 +73,8 @@ export default function PaymentManagement() {
 
     try {
       const url = editingPayment 
-        ? `${API_BASE}/api/payments/${editingPayment.id}`
-        : `${API_BASE}/api/payments`
+        ? `${API_BASE}/api/v1/payments/${editingPayment.id}`
+        : `${API_BASE}/api/v1/payments`
       
       const method = editingPayment ? 'PUT' : 'POST'
 
@@ -127,7 +127,7 @@ export default function PaymentManagement() {
     if (!confirm('Are you sure you want to delete this payment?')) return
 
     try {
-      const response = await fetch(`${API_BASE}/api/payments/${id}`, {
+      const response = await fetch(`${API_BASE}/api/v1/payments/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -148,7 +148,7 @@ export default function PaymentManagement() {
 
   const handleView = async (id: number) => {
     try {
-      const response = await fetch(`${API_BASE}/api/payments/${id}`, {
+      const response = await fetch(`${API_BASE}/api/v1/payments/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

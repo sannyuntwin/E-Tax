@@ -34,7 +34,7 @@ const AdminSystemStats: React.FC = () => {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/api/admin/system/stats');
+      const response = await apiClient.get('/api/v1/admin/system/stats');
 
       if (!response.ok) throw new Error('Failed to fetch system statistics');
 

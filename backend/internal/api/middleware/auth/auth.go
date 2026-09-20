@@ -37,6 +37,11 @@ type SecurityService struct {
 	passwordConfig PasswordConfig
 }
 
+// SetAccessTokenTTL overrides how long issued access tokens stay valid.
+func (s *SecurityService) SetAccessTokenTTL(ttl time.Duration) {
+	s.jwtConfig.AccessTokenTTL = ttl
+}
+
 // Create new security service
 func NewSecurityService(secretKey string) *SecurityService {
 	return &SecurityService{
@@ -331,8 +336,14 @@ func (s *SecurityService) AuthMiddleware() gin.HandlerFunc {
 			return []byte(s.jwtConfig.SecretKey), nil
 		})
 
-		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token", "details": err.Error()})
+			c.Abort()
+			return
+		}
+
+		if !token.Valid {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token is not valid"})
 			c.Abort()
 			return
 		}
@@ -341,7 +352,9 @@ func (s *SecurityService) AuthMiddleware() gin.HandlerFunc {
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
 			// Convert user_id from float64 to uint
 			if userIDFloat, ok := claims["user_id"].(float64); ok {
-				c.Set("user_id", uint(userIDFloat))
+				uid := uint(userIDFloat)
+				c.Set("user_id", uid)
+				c.Set("company_id", uid) // Set company_id as well (for now they are same)
 			}
 			c.Set("username", claims["username"])
 			c.Set("role", claims["role"])

@@ -10,7 +10,7 @@ postgres_data/
 *.log
 logs/
 
-# Environment files (excluding backend/.env for Render)
+# Environment files
 .env.local
 .env.development.local
 .env.test.local

@@ -60,7 +60,7 @@ export default function ProductCatalog() {
   // Ensure products is always an array
   const productsArray = Array.isArray(products) ? products : []
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8081'
   const token = localStorage.getItem('access_token')
 
   useEffect(() => {
@@ -69,7 +69,7 @@ export default function ProductCatalog() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/products`, {
+      const response = await fetch(`${API_BASE}/api/v1/products`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -95,8 +95,8 @@ export default function ProductCatalog() {
 
     try {
       const url = editingProduct 
-        ? `${API_BASE}/api/products/${editingProduct.id}`
-        : `${API_BASE}/api/products`
+        ? `${API_BASE}/api/v1/products/${editingProduct.id}`
+        : `${API_BASE}/api/v1/products`
       
       const method = editingProduct ? 'PUT' : 'POST'
 
@@ -155,7 +155,7 @@ export default function ProductCatalog() {
     if (!confirm('Are you sure you want to delete this product?')) return
 
     try {
-      const response = await fetch(`${API_BASE}/api/products/${id}`, {
+      const response = await fetch(`${API_BASE}/api/v1/products/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -49,7 +49,7 @@ export default function InvoiceItemsManagement({ invoiceId }: { invoiceId?: numb
     tax_rate: 7
   })
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8081'
   const token = localStorage.getItem('access_token')
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export default function InvoiceItemsManagement({ invoiceId }: { invoiceId?: numb
     if (!invoiceId) return
 
     try {
-      const response = await fetch(`${API_BASE}/api/invoices/${invoiceId}/items`, {
+      const response = await fetch(`${API_BASE}/api/v1/invoices/${invoiceId}/items`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -83,7 +83,7 @@ export default function InvoiceItemsManagement({ invoiceId }: { invoiceId?: numb
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/products`, {
+      const response = await fetch(`${API_BASE}/api/v1/products`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -104,8 +104,8 @@ export default function InvoiceItemsManagement({ invoiceId }: { invoiceId?: numb
 
     try {
       const url = editingItem 
-        ? `${API_BASE}/api/invoice-items/${editingItem.id}`
-        : `${API_BASE}/api/invoices/${invoiceId}/items`
+        ? `${API_BASE}/api/v1/invoice-items/${editingItem.id}`
+        : `${API_BASE}/api/v1/invoices/${invoiceId}/items`
       
       const method = editingItem ? 'PUT' : 'POST'
 
@@ -160,7 +160,7 @@ export default function InvoiceItemsManagement({ invoiceId }: { invoiceId?: numb
     if (!confirm('Are you sure you want to delete this invoice item?')) return
 
     try {
-      const response = await fetch(`${API_BASE}/api/invoice-items/${id}`, {
+      const response = await fetch(`${API_BASE}/api/v1/invoice-items/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

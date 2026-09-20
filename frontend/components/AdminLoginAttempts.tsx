@@ -37,7 +37,7 @@ const AdminLoginAttempts: React.FC = () => {
         ...(filters.success && { success: filters.success }),
       });
 
-      const response = await apiClient.get(`/api/admin/login-attempts?${params}`);
+      const response = await apiClient.get(`/api/v1/admin/login-attempts?${params}`);
 
       if (!response.ok) throw new Error('Failed to fetch login attempts');
 

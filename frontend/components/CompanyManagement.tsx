@@ -46,7 +46,7 @@ export default function CompanyManagement() {
     description: ''
   })
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8081'
   const token = localStorage.getItem('access_token')
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export default function CompanyManagement() {
 
   const fetchCompanies = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/companies`, {
+      const response = await fetch(`${API_BASE}/api/v1/companies`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -79,8 +79,8 @@ export default function CompanyManagement() {
 
     try {
       const url = editingCompany 
-        ? `${API_BASE}/api/companies/${editingCompany.id}`
-        : `${API_BASE}/api/companies`
+        ? `${API_BASE}/api/v1/companies/${editingCompany.id}`
+        : `${API_BASE}/api/v1/companies`
       
       const method = editingCompany ? 'PUT' : 'POST'
 
@@ -135,7 +135,7 @@ export default function CompanyManagement() {
     if (!confirm('Are you sure you want to delete this company?')) return
 
     try {
-      const response = await fetch(`${API_BASE}/api/companies/${id}`, {
+      const response = await fetch(`${API_BASE}/api/v1/companies/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -156,7 +156,7 @@ export default function CompanyManagement() {
 
   const handleView = async (id: number) => {
     try {
-      const response = await fetch(`${API_BASE}/api/companies/${id}`, {
+      const response = await fetch(`${API_BASE}/api/v1/companies/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

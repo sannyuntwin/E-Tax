@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { DollarSign, FileText, AlertCircle, TrendingUp, Users, Clock } from 'lucide-react'
 import { DashboardStats } from '@/types/enhancements'
 import apiClient from '@/utils/api'
+import LicenseStatus from './LicenseStatus'
 
 interface User {
   id: number
@@ -27,7 +28,7 @@ export default function Dashboard({ onCreateInvoice, user }: DashboardProps) {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8081'
 
   useEffect(() => {
     if (user) {
@@ -37,7 +38,7 @@ export default function Dashboard({ onCreateInvoice, user }: DashboardProps) {
 
   const fetchDashboardStats = async () => {
     try {
-      const response = await apiClient.get('/api/dashboard/stats')
+      const response = await apiClient.get('/api/v1/dashboard/stats')
       if (response.ok) {
         const data = await response.json()
         setStats(data)
@@ -87,18 +88,6 @@ export default function Dashboard({ onCreateInvoice, user }: DashboardProps) {
 
   return (
     <div className="space-y-6">
-      {/* Quick Actions */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Dashboard</h2>
-        <button
-          onClick={onCreateInvoice}
-          className="flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
-        >
-          <FileText className="w-5 h-5 mr-2" />
-          Create Invoice
-        </button>
-      </div>
-
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Total Revenue */}

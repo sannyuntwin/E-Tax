@@ -27,10 +27,6 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	
-	// Render-specific port handling
-	if port := os.Getenv("PORT"); port != "" {
-		cfg.Port = port
-	}
 
 	// Initialize database
 	db, err := database.InitDB()
@@ -41,6 +37,7 @@ func main() {
 
 	// Initialize security service
 	securityService := auth.NewSecurityService(cfg.JWTSecret)
+	securityService.SetAccessTokenTTL(time.Duration(cfg.JWTExpireHours) * time.Hour)
 
 	// Set up Gin router with security and performance optimizations
 	r := gin.New()
@@ -48,14 +45,8 @@ func main() {
 	// Add security middleware first
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
-	r.Use(func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization")
-		c.Next()
-	})
-	r.Use(middleware.EnhancedSecurityHeaders())
 	r.Use(middleware.EnhancedCORS(cfg.AllowedOrigins))
+	r.Use(middleware.EnhancedSecurityHeaders())
 	r.Use(middleware.EnhancedRateLimiter(cfg.RateLimitRequests, cfg.RateLimitWindow))
 	r.Use(middleware.ValidateInput())
 	r.Use(middleware.SecureFileUpload(cfg.MaxFileSize))
@@ -196,10 +187,10 @@ func main() {
 	})
 
 	fmt.Printf("🔒 E-Tax API Server starting on port %s\n", cfg.Port)
-	fmt.Printf("🏥 Health check available at: http://localhost:%s/health\n", cfg.Port)
-	fmt.Printf("📊 Performance metrics at: http://localhost:%s/api/performance/metrics\n", cfg.Port)
+	fmt.Printf("🏥 Health check available at: http://localhost:8081/health\n")
+	fmt.Printf("📊 Performance metrics at: http://localhost:8081/api/performance/metrics\n")
 	fmt.Printf("🔐 Security enabled with JWT authentication\n")
-	fmt.Printf("📝 API Documentation: http://localhost:%s/api/docs\n", cfg.Port)
+	fmt.Printf("📝 API Documentation: http://localhost:8081/api/docs\n")
 	
 	if cfg.IsDevelopment() {
 		fmt.Printf("⚠️  Running in development mode\n")

@@ -71,7 +71,7 @@ export default function InvoiceTemplateManager({
     is_default: false,
   })
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8081'
 
   const confirmAction = (message: string): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -113,7 +113,7 @@ export default function InvoiceTemplateManager({
   const fetchTemplates = async () => {
     try {
       setLoading(true)
-      const response = await apiClient.get('/api/invoice-templates')
+      const response = await apiClient.get('/api/v1/invoice-templates')
       if (response.ok) {
         const data = await response.json()
         setTemplates(data || [])
@@ -130,7 +130,7 @@ export default function InvoiceTemplateManager({
 
   const fetchCompanies = async () => {
     try {
-      const response = await apiClient.get('/api/companies')
+      const response = await apiClient.get('/api/v1/companies')
       if (response.ok) {
         const data = await response.json()
         setCompanies(data || [])
@@ -142,7 +142,7 @@ export default function InvoiceTemplateManager({
 
   const fetchCustomers = async () => {
     try {
-      const response = await apiClient.get('/api/customers')
+      const response = await apiClient.get('/api/v1/customers')
       if (response.ok) {
         const data = await response.json()
         setCustomers(data || [])
@@ -173,7 +173,7 @@ export default function InvoiceTemplateManager({
   const handleDeleteTemplate = async (templateId: number) => {
     if (await confirmAction('Are you sure you want to delete this template?')) {
       try {
-        const response = await fetch(`${API_BASE}/api/invoice-templates/${templateId}`, {
+        const response = await fetch(`${API_BASE}/api/v1/invoice-templates/${templateId}`, {
           method: 'DELETE',
         })
 
@@ -193,7 +193,7 @@ export default function InvoiceTemplateManager({
   const handleDuplicateTemplate = async (template: InvoiceTemplate) => {
     const newTemplateName = `${template.name} (Copy)`
     try {
-      const response = await fetch(`${API_BASE}/api/invoice-templates`, {
+      const response = await fetch(`${API_BASE}/api/v1/invoice-templates`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -58,7 +58,7 @@ const AdminUserManagement: React.FC = () => {
         ...(searchTerm && { search: searchTerm }),
       });
 
-      const response = await apiClient.get(`/api/admin/users?${params}`);
+      const response = await apiClient.get(`/api/v1/admin/users?${params}`);
 
       if (!response.ok) throw new Error('Failed to fetch users');
 
@@ -77,8 +77,8 @@ const AdminUserManagement: React.FC = () => {
     e.preventDefault();
     try {
       const response = editingUser 
-        ? await apiClient.put(`/api/admin/users/${editingUser.id}`, formData)
-        : await apiClient.post('/api/admin/users', formData);
+        ? await apiClient.put(`/api/v1/admin/users/${editingUser.id}`, formData)
+        : await apiClient.post('/api/v1/admin/users', formData);
 
       if (!response.ok) throw new Error('Failed to save user');
 
@@ -97,7 +97,7 @@ const AdminUserManagement: React.FC = () => {
     if (!confirm('Are you sure you want to delete this user?')) return;
 
     try {
-      const response = await apiClient.delete(`/api/admin/users/${userId}`);
+      const response = await apiClient.delete(`/api/v1/admin/users/${userId}`);
 
       if (!response.ok) throw new Error('Failed to delete user');
 

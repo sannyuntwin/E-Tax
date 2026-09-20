@@ -56,7 +56,7 @@ func InitDB() (*gorm.DB, error) {
 	sqlDB.SetConnMaxLifetime(cfg.Database.MaxLifetime)
 
 	// Auto migrate the schema
-	err = db.AutoMigrate(&Company{}, &Customer{}, &Invoice{}, &InvoiceItem{}, &Product{}, &InvoiceTemplate{}, &RecurringInvoice{}, &PaymentReminder{}, &Payment{}, &User{}, &Session{}, &AuditLog{}, &APIKey{}, &SecuritySettings{}, &LoginAttempt{}, &SubscriptionPlan{}, &CompanySubscription{}, &APIUsage{}, &BillingInvoice{}, &UsageQuota{}, &WhiteLabelConfig{}, &PaymentMethod{}, &MarketplaceIntegration{}, &POSVendorConfig{})
+	err = db.AutoMigrate(&Company{}, &Customer{}, &Invoice{}, &InvoiceItem{}, &Product{}, &InvoiceTemplate{}, &RecurringInvoice{}, &PaymentReminder{}, &Payment{}, &User{}, &Session{}, &AuditLog{}, &APIKey{}, &SecuritySettings{}, &LoginAttempt{}, &SubscriptionPlan{}, &CompanySubscription{}, &APIUsage{}, &BillingInvoice{}, &UsageQuota{}, &WhiteLabelConfig{}, &PaymentMethod{}, &MarketplaceIntegration{}, &POSVendorConfig{}, &LicenseKey{}, &LicenseValidationLog{}, &LicenseServerConfig{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}

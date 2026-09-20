@@ -32,7 +32,7 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
 
   const checkAuth = async () => {
     const token = localStorage.getItem('access_token')
-    
+
     if (!token) {
       setLoading(false)
       setShowAuth(true)
@@ -40,7 +40,7 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
     }
 
     try {
-      const response = await apiClient.get('/api/profile')
+      const response = await apiClient.get('/api/v1/profile')
 
       if (response.ok) {
         const userData = await response.json()
@@ -93,7 +93,7 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
     <>
       {/* Navigation Bar */}
       <nav className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <h1 className="text-xl font-semibold text-gray-900">E-Tax System</h1>
@@ -110,9 +110,9 @@ export default function AuthWrapper({ children }: AuthWrapperProps) {
           </div>
         </div>
       </nav>
-      
+
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <main className="py-6 sm:px-6 lg:px-8">
         {children(user)}
       </main>
     </>
